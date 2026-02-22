@@ -14,11 +14,13 @@ import {
   Voicemail,
   PhoneMissed,
   Send,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/EmptyState';
 import { env } from '@/lib/env';
+import { getSupabaseClient } from '@/lib/supabase/client';
 
 // Types for what we receive from the server
 interface ContactBasic {
@@ -63,6 +65,10 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
   const [notes, setNotes] = useState<CallNoteWithContact[]>(initialNotes);
   const [showForm, setShowForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CallNoteWithContact | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const supabase = getSupabaseClient();
 
   // Form state
   const [selectedContactId, setSelectedContactId] = useState('');
@@ -127,6 +133,25 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
       toast.error('Kon belnotitie niet opslaan. Probeer opnieuw.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('call_notes')
+        .delete()
+        .eq('id', deleteTarget.id);
+      if (error) throw error;
+      setNotes((prev) => prev.filter((n) => n.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      toast.success('Belnotitie verwijderd');
+    } catch {
+      toast.error('Kon notitie niet verwijderen.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -308,11 +333,66 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
                       )}
                     </div>
                   </div>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => setDeleteTarget(note)}
+                    className="flex-shrink-0 p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
+                    aria-label="Verwijderen"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={() => !isDeleting && setDeleteTarget(null)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900">Notitie verwijderen?</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  Dit verwijdert deze belnotitie permanent uit de database.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Annuleren
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Bezig...
+                    </>
+                  ) : (
+                    'Verwijderen'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

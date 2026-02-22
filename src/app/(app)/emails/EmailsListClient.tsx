@@ -81,9 +81,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                     >
                       {email.classification}
                     </Badge>
-                    {email.draft_created && (
-                      <Badge variant="info">📝 Concept</Badge>
-                    )}
+
                     <span className="text-xs text-gray-400 ml-auto">
                       {format(new Date(email.processed_at), 'd MMM HH:mm', { locale: nl })}
                     </span>
