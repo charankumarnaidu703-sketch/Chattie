@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MessageSquare, Mail } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Mail, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/conversations', label: 'Gesprekken', icon: MessageSquare },
   { href: '/emails', label: 'Emails', icon: Mail },
+  { href: '/call-notes', label: 'Belnotities', icon: Phone },
 ];
 
 export function MobileNav() {
