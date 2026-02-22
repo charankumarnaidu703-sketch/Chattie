@@ -142,7 +142,7 @@ export function ConversationView({
         .from('conversations')
         .update({
           bot_paused: newPaused,
-          status: newPaused ? 'paused' : 'active',
+          status: (newPaused ? 'paused' : 'active') as 'active' | 'qualified' | 'paused' | 'closed',
         })
         .eq('id', conversation.id);
 
