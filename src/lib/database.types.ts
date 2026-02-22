@@ -22,6 +22,7 @@ export type Database = {
           key?: string;
           value?: string;
         };
+        Relationships: [];
       };
       contacts: {
         Row: {
@@ -51,6 +52,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       conversations: {
         Row: {
@@ -104,6 +106,15 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'conversations_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       messages: {
         Row: {
@@ -142,6 +153,15 @@ export type Database = {
           sent_at?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'messages_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       email_threads: {
         Row: {
@@ -183,6 +203,15 @@ export type Database = {
           draft_gmail_id?: string | null;
           processed_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'email_threads_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       call_notes: {
         Row: {
@@ -215,6 +244,22 @@ export type Database = {
           gmail_sent?: boolean;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'call_notes_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'call_notes_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       system_events: {
         Row: {
@@ -238,10 +283,15 @@ export type Database = {
           metadata?: Json;
           created_at?: string;
         };
+        Relationships: [];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
     Enums: {
       conversation_status: 'active' | 'qualified' | 'paused' | 'closed';
       message_direction: 'inbound' | 'outbound';
