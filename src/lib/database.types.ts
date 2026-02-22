@@ -299,5 +299,8 @@ export type Database = {
       email_classification: 'CUSTOMER' | 'SUPPLIER' | 'SPAM' | 'INTERNAL' | 'OTHER';
       event_type: 'whatsapp_received' | 'whatsapp_sent' | 'email_received' | 'email_classified' | 'draft_created' | 'summary_sent' | 'bot_paused' | 'bot_resumed' | 'qualification_complete' | 'error';
     };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 };

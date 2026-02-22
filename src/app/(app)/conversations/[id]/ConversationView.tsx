@@ -140,10 +140,11 @@ export function ConversationView({
       const newPaused = !conversation.bot_paused;
       const { error } = await supabase
         .from('conversations')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .update({
           bot_paused: newPaused,
-          status: (newPaused ? 'paused' : 'active') as 'active' | 'qualified' | 'paused' | 'closed',
-        })
+          status: newPaused ? 'paused' : 'active',
+        } as any)
         .eq('id', conversation.id);
 
       if (error) throw error;
