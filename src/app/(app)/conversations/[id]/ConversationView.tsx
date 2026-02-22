@@ -136,8 +136,17 @@ export function ConversationView({
   // Pause / Resume bot
   const handleToggleBot = async () => {
     setIsTogglingBot(true);
+    const previousConversation = conversation;
     try {
       const newPaused = !conversation.bot_paused;
+
+      // Optimistic UI update — feels instant
+      setConversation((prev) => ({
+        ...prev,
+        bot_paused: newPaused,
+        status: newPaused ? 'paused' : 'active',
+      } as typeof prev));
+
       const { error } = await supabase
         .from('conversations')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,7 +156,11 @@ export function ConversationView({
         } as any)
         .eq('id', conversation.id);
 
-      if (error) throw error;
+      if (error) {
+        // Rollback on failure
+        setConversation(previousConversation);
+        throw error;
+      }
 
       toast.success(
         newPaused
@@ -167,6 +180,26 @@ export function ConversationView({
     if (!text) return;
 
     setIsSending(true);
+    setMessageText('');
+
+    // Create optimistic message so it appears instantly
+    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: optimisticId,
+      conversation_id: conversation.id,
+      unipile_msg_id: null,
+      direction: 'outbound',
+      type: 'text',
+      content: text,
+      media_url: null,
+      sent_by_bot: false,
+      sent_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    scrollToBottom();
+
     try {
       const response = await fetch(env.n8nManualMessageUrl, {
         method: 'POST',
@@ -178,9 +211,12 @@ export function ConversationView({
         }),
       });
 
-      if (!response.ok) throw new Error('Send failed');
+      if (!response.ok) {
+        // Remove optimistic message on failure
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        throw new Error('Send failed');
+      }
 
-      setMessageText('');
       toast.success('Bericht verzonden');
     } catch {
       toast.error('Kon bericht niet verzenden. Probeer opnieuw.');
@@ -198,49 +234,51 @@ export function ConversationView({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.24))] md:h-[calc(100vh-theme(spacing.12))]">
+    <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-[calc(100dvh-3rem)]">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 rounded-t-xl">
-        <Link href="/conversations" className="md:hidden">
+      <div className="flex items-center gap-2 px-3 py-2.5 md:gap-3 md:px-4 md:py-3 bg-white border-b border-gray-200 rounded-t-xl flex-shrink-0">
+        <Link href="/conversations" className="md:hidden flex-shrink-0">
           <Button variant="ghost" size="icon" className="h-9 w-9">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
 
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
-          <span className="text-green-700 font-semibold text-sm">
+        <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
+          <span className="text-green-700 font-semibold text-xs md:text-sm">
             {displayName.substring(0, 2).toUpperCase()}
           </span>
         </div>
 
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-gray-900 text-sm truncate">{displayName}</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <StatusBadge status={conversation.bot_paused ? 'paused' : conversation.status} />
             {contact?.phone && (
-              <span className="text-xs text-gray-400">{contact.phone}</span>
+              <span className="text-xs text-gray-400 hidden sm:inline">{contact.phone}</span>
             )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <Button
             variant={conversation.bot_paused ? 'default' : 'warning'}
             size="sm"
             onClick={handleToggleBot}
             disabled={isTogglingBot}
-            className="min-h-[44px]"
+            className="min-h-[40px] md:min-h-[44px] text-xs md:text-sm px-2.5 md:px-3"
           >
             {isTogglingBot ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : conversation.bot_paused ? (
               <>
-                <Play className="h-4 w-4" /> Hervatten
+                <Play className="h-4 w-4" />
+                <span className="hidden sm:inline">Hervatten</span>
               </>
             ) : (
               <>
-                <Pause className="h-4 w-4" /> Pauzeren
+                <Pause className="h-4 w-4" />
+                <span className="hidden sm:inline">Pauzeren</span>
               </>
             )}
           </Button>
@@ -270,11 +308,11 @@ export function ConversationView({
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
         {/* LEFT: Chat messages */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 relative">
           {/* Messages */}
           <div
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-1 bg-gray-50"
+            className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 space-y-1 bg-gray-50"
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -292,7 +330,7 @@ export function ConversationView({
           {showScrollButton && (
             <button
               onClick={() => scrollToBottom()}
-              className="absolute bottom-32 right-8 md:right-[42%] h-10 w-10 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+              className="absolute bottom-20 right-4 md:bottom-8 md:right-8 h-10 w-10 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
             >
               <ChevronDown className="h-5 w-5 text-gray-500" />
             </button>
@@ -300,14 +338,14 @@ export function ConversationView({
 
           {/* Message input (only when bot paused) */}
           {conversation.bot_paused && (
-            <div className="p-3 bg-white border-t border-gray-200">
+            <div className="p-2.5 md:p-3 bg-white border-t border-gray-200 safe-area-bottom">
               <div className="flex gap-2 items-end">
                 <Textarea
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Type uw bericht..."
-                  className="min-h-[44px] max-h-32 resize-none"
+                  className="min-h-[44px] max-h-32 resize-none text-base md:text-sm"
                   rows={1}
                   disabled={isSending}
                 />
