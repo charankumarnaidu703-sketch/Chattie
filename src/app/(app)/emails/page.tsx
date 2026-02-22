@@ -1,8 +1,4 @@
 import { Suspense } from 'react';
-import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
-import { Mail, Inbox } from 'lucide-react';
-import { EmptyState } from '@/components/EmptyState';
 import { EmailsListClient } from './EmailsListClient';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,14 +7,20 @@ export const dynamic = 'force-dynamic';
 
 function EmailsSkeleton() {
   return (
-    <div className="space-y-3">
-      {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="rounded-xl border bg-white p-4">
-          <Skeleton className="h-4 w-48 mb-2" />
-          <Skeleton className="h-3 w-32 mb-1" />
-          <Skeleton className="h-3 w-64" />
-        </div>
-      ))}
+    <div className="space-y-4">
+      <div>
+        <Skeleton className="h-8 w-32 mb-2" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-xl border bg-white p-4">
+            <Skeleton className="h-4 w-48 mb-2" />
+            <Skeleton className="h-3 w-32 mb-1" />
+            <Skeleton className="h-3 w-64" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -32,31 +34,7 @@ async function EmailsContent() {
     .order('processed_at', { ascending: false })
     .limit(50);
 
-  const emailList = emails ?? [];
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Mail className="h-6 w-6 text-blue-500" />
-          Emails
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {emailList.length} verwerkte emails
-        </p>
-      </div>
-
-      {emailList.length === 0 ? (
-        <EmptyState
-          icon={Inbox}
-          message="Nog geen emails verwerkt"
-          subMessage="Zodra de Gmail-poller draait, verschijnen geclassificeerde emails hier."
-        />
-      ) : (
-        <EmailsListClient initialEmails={emailList} />
-      )}
-    </div>
-  );
+  return <EmailsListClient initialEmails={emails ?? []} />;
 }
 
 export default function EmailsPage() {
