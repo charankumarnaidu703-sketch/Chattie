@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConversationCard } from '@/components/ConversationCard';
 import { EmptyState } from '@/components/EmptyState';
-import type { ConversationWithContact } from '@/lib/types';
+import type { ConversationWithContact, Message } from '@/lib/types';
 
 type ConversationWithMessages = ConversationWithContact & {
-  messages?: { content: string | null; sent_at: string; direction: string }[];
+  messages?: Message[];
 };
 
 interface ConversationsListClientProps {

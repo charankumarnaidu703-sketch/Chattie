@@ -12,8 +12,8 @@ async function ConversationsContent() {
     .from('conversations')
     .select(`
       *,
-      contacts (id, name, phone),
-      messages (content, sent_at, direction)
+      contacts(*),
+      messages(*)
     `)
     .order('updated_at', { ascending: false })
     .limit(50);
@@ -21,9 +21,9 @@ async function ConversationsContent() {
   // Sort messages within each conversation (most recent first for preview)
   const conversationsWithSortedMessages = (conversations ?? []).map((conv) => ({
     ...conv,
-    contacts: conv.contacts as { id: string; name: string | null; phone: string },
-    messages: (conv.messages as { content: string | null; sent_at: string; direction: string }[])
-      ?.sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime()),
+    messages: [...(conv.messages ?? [])].sort(
+      (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime()
+    ),
   }));
 
   return <ConversationsListClient conversations={conversationsWithSortedMessages} />;
