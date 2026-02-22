@@ -101,11 +101,11 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                     </span>
                     <button
                       onClick={() => setDeleteTarget(email)}
-                      className="group/del relative p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/50 hover:shadow-sm hover:shadow-red-100/50 transition-all duration-300 opacity-0 group-hover:opacity-100 focus:opacity-100 active:scale-95 border border-transparent hover:border-red-100"
+                      className="group/del relative p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50/50 hover:shadow-sm hover:shadow-red-100/50 transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 active:scale-95 border border-gray-100 md:border-transparent hover:border-red-100"
                       title="Verwijderen"
                     >
-                      <Trash2 className="h-4.5 w-4.5 transition-transform group-hover/del:rotate-3" />
-                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/del:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      <Trash2 className="h-5 w-5 transition-transform group-hover/del:rotate-3" />
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/del:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
                         Verwijderen
                       </span>
                     </button>
