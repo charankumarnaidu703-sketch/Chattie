@@ -1,0 +1,457 @@
+{
+  "name": "5-Call Notes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "save-call-note",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4a8593f7-d179-4585-97c4-be405fc339c2",
+      "name": "Webhook — Save Call Note",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "call-note-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'processing' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "383a180d-6eb2-45e2-8e36-650dd4893aa6",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract payload\nconst body = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    contactId: body.contactId || '',\n    conversationId: body.conversationId || '',\n    notes: body.notes || '',\n    outcome: body.outcome || '',\n    followUpDate: body.followUpDate || null\n  }\n}];"
+      },
+      "id": "8088856f-48a2-451b-9ae0-c2e9193ff87e",
+      "name": "Extract Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/contacts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.contactId }}"
+            },
+            {
+              "name": "select",
+              "value": "name,phone"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c2bac363-ebc5-4ba6-bd4f-eb2a2a6fe1d3",
+      "name": "Get Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge contact data with payload\nconst raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : (Array.isArray(raw.body) ? raw.body : [raw]);\nconst contact = rows[0] || {};\nconst payload = $node['Extract Payload'].json;\n\nreturn [{\n  json: {\n    contactId: payload.contactId,\n    conversationId: payload.conversationId,\n    notes: payload.notes,\n    outcome: payload.outcome,\n    followUpDate: payload.followUpDate,\n    contactName: contact.name || 'Onbekend',\n    contactPhone: contact.phone || ''\n  }\n}];"
+      },
+      "id": "f8e02270-519b-4671-8bb1-d12a0ae3297e",
+      "name": "Merge Contact + Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/call_notes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contact_id: $json.contactId, conversation_id: $json.conversationId, notes: $json.notes, outcome: $json.outcome, follow_up_date: $json.followUpDate, gmail_sent: false, created_at: new Date().toISOString() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "7347a7cd-57a8-4eba-bcd2-7e671e711769",
+      "name": "Save Call Note to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Call Note Email HTML\nconst data = $node['Merge Contact + Payload'].json;\nconst callNote = $input.first().json;\nconst callNoteRow = Array.isArray(callNote) ? callNote[0] : (Array.isArray(callNote.body) ? callNote.body[0] : callNote);\n\nconst callNoteId = callNoteRow.id || '';\nconst followUpStr = data.followUpDate \n  ? new Date(data.followUpDate).toLocaleDateString('nl-NL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })\n  : 'Geen vervolgdatum gepland';\n\nconst outcomeEmoji = {\n  'interested': '✅',\n  'not_interested': '❌',\n  'callback': '📞',\n  'voicemail': '📭',\n  'no_answer': '📵'\n};\nconst emoji = outcomeEmoji[data.outcome] || '📝';\n\nconst html = `<!DOCTYPE html>\n<html>\n<body style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  <div style=\"background: #3b82f6; padding: 20px; border-radius: 8px 8px 0 0;\">\n    <h1 style=\"color: white; margin: 0; font-size: 20px;\">${emoji} Belnotitie: ${data.contactName}</h1>\n    <p style=\"color: #dbeafe; margin: 8px 0 0 0;\">${new Date().toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>\n  </div>\n  \n  <div style=\"background: #eff6ff; padding: 20px; border: 1px solid #93c5fd; border-top: none;\">\n    <table style=\"width: 100%; border-collapse: collapse;\">\n      <tr><td style=\"padding: 8px; font-weight: bold; width: 130px;\">Naam:</td>\n          <td style=\"padding: 8px;\">${data.contactName}</td></tr>\n      <tr style=\"background: white;\"><td style=\"padding: 8px; font-weight: bold;\">Telefoon:</td>\n          <td style=\"padding: 8px;\">${data.contactPhone}</td></tr>\n      <tr><td style=\"padding: 8px; font-weight: bold;\">Uitkomst:</td>\n          <td style=\"padding: 8px;\"><strong>${data.outcome}</strong></td></tr>\n      <tr style=\"background: white;\"><td style=\"padding: 8px; font-weight: bold;\">Vervolg:</td>\n          <td style=\"padding: 8px;\">${followUpStr}</td></tr>\n    </table>\n    \n    <h3 style=\"color: #1d4ed8; margin-top: 20px;\">Notities</h3>\n    <div style=\"background: white; padding: 15px; border-radius: 6px; border: 1px solid #bfdbfe; white-space: pre-wrap;\">${data.notes}</div>\n  </div>\n  \n  <div style=\"background: #f8fafc; padding: 12px 20px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;\">\n    <p style=\"color: #94a3b8; font-size: 12px; margin: 0;\">Automatisch gegenereerd door Chattie</p>\n  </div>\n</body>\n</html>`;\n\nreturn [{\n  json: {\n    html: html,\n    contactName: data.contactName,\n    outcome: data.outcome,\n    callNoteId: callNoteId\n  }\n}];"
+      },
+      "id": "8491daac-e172-423e-9548-947a09dd1ca6",
+      "name": "Build Call Note Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "=charankumar35777@gmail.com",
+        "subject": "=📞 Belnotitie: {{ $json.contactName }} — {{ $json.outcome }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5939fe3b-c471-42cc-84ab-bb7f8c45d0c1",
+      "name": "Gmail — Send Call Note to Owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1568,
+        0
+      ],
+      "webhookId": "9393bc9d-c6c8-4daf-9d45-2d0d55358e65",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/call_notes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.callNoteId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ gmail_sent: true }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "237eb4bf-fb15-4215-a3d0-46f169e93e45",
+      "name": "Mark Gmail Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1792,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error Handler\nconst error = $input.first().json;\nreturn [{\n  json: {\n    type: 'error',\n    description: String(error.message || error.error || 'Unknown error').substring(0, 500),\n    metadata: { workflow: 'call-notes', node: error.node || 'Unknown', timestamp: new Date().toISOString() }\n  }\n}];"
+      },
+      "id": "1eb937f8-77cf-46d3-92fa-ebece53098da",
+      "name": "Global Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/system_events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "4474c1e2-077c-4306-adff-775be7c07edf",
+      "name": "Log Error to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook — Save Call Note": [
+      {
+        "json": {
+          "headers": {
+            "host": "niekbevisible.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36",
+            "content-length": "176",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,te;q=0.6",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2409:40f0:540c:935:8000::",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d1fbeebb22b6e76-MAA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "origin": "https://chattie-k1f1.vercel.app",
+            "priority": "u=1, i",
+            "referer": "https://chattie-k1f1.vercel.app/",
+            "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+            "sec-ch-ua-mobile": "?1",
+            "sec-ch-ua-platform": "\"Android\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "2409:40f0:540c:935:8000::, 162.158.55.70",
+            "x-forwarded-host": "niekbevisible.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-26-7b6dc7c86c-96shf",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2409:40f0:540c:935:8000::"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "contactId": "56a4d9f8-5ba5-407e-8e95-96455a7ea85e",
+            "conversationId": "26976bc2-c66c-453b-9ffa-64dac37cb8d4",
+            "notes": "Jjjejeje",
+            "outcome": "callback",
+            "followUpDate": "2026-02-21"
+          },
+          "webhookUrl": "https://niekbevisible.app.n8n.cloud/webhook/save-call-note",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook — Save Call Note": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200 OK": {
+      "main": [
+        [
+          {
+            "node": "Extract Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Payload": {
+      "main": [
+        [
+          {
+            "node": "Get Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact": {
+      "main": [
+        [
+          {
+            "node": "Merge Contact + Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Contact + Payload": {
+      "main": [
+        [
+          {
+            "node": "Save Call Note to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Call Note to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Build Call Note Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Call Note Email": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Send Call Note to Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Send Call Note to Owner": {
+      "main": [
+        [
+          {
+            "node": "Mark Gmail Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "30c5236a-996a-48a2-b5e5-7ed9d7d04117",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "280a1950d3062d1ee5011d8dc582c428d297888da331d4d57d58faa86aaa35bf"
+  },
+  "id": "XkQ3TjAPHDgUMVo6",
+  "tags": [
+    {
+      "createdAt": "2026-02-18T09:24:09.681Z",
+      "updatedAt": "2026-02-18T09:24:09.681Z",
+      "id": "wDacDrDTEPSclVrT",
+      "name": "Chattie"
+    }
+  ]
+}

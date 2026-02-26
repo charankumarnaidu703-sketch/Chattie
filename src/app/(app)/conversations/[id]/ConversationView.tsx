@@ -391,9 +391,22 @@ export function ConversationView({
 
 // ─── Message Bubble ──────────────────────────────────────────
 
+function parseMediaUrls(mediaUrl: string | null): string[] {
+  if (!mediaUrl) return [];
+  // Try parsing as JSON array (multiple attachments)
+  try {
+    const parsed = JSON.parse(mediaUrl);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {
+    // Not JSON — treat as single URL
+  }
+  return [mediaUrl];
+}
+
 function MessageBubble({ message }: { message: Message }) {
   const isInbound = message.direction === 'inbound';
   const isManual = !message.sent_by_bot && message.direction === 'outbound';
+  const mediaUrls = message.type === 'image' ? parseMediaUrls(message.media_url) : [];
 
   return (
     <div
@@ -412,17 +425,41 @@ function MessageBubble({ message }: { message: Message }) {
             Handmatig verstuurd
           </span>
         )}
-        {message.type === 'image' && !message.content && (
+        {/* Render actual images from Supabase Storage */}
+        {message.type === 'image' && mediaUrls.length > 0 && (
+          <div className={`${mediaUrls.length > 1 ? 'grid grid-cols-2 gap-1' : ''} mb-1.5`}>
+            {mediaUrls.map((url, idx) => (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`Foto ${idx + 1}`}
+                  className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  loading="lazy"
+                />
+              </a>
+            ))}
+          </div>
+        )}
+        {/* Fallback: show text label when image has no URL */}
+        {message.type === 'image' && mediaUrls.length === 0 && (
           <div className="flex items-center gap-1.5 mb-1">
             <Camera className="h-3.5 w-3.5" />
             <span className="text-xs opacity-80">Foto ontvangen</span>
           </div>
         )}
-        <p className="whitespace-pre-wrap break-words">{message.content || ''}</p>
+        {message.content && (
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        )}
         <span
-          className={`text-[10px] mt-1 block ${
-            isInbound ? 'text-gray-400' : 'text-white/70'
-          }`}
+          className={`text-[10px] mt-1 block ${isInbound ? 'text-gray-400' : 'text-white/70'
+            }`}
         >
           {format(new Date(message.sent_at), 'HH:mm')}
         </span>
@@ -555,19 +592,17 @@ function DetailRow({
         {isLink && href ? (
           <a
             href={href}
-            className={`text-sm font-medium ${
-              highlight ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'
-            } transition-colors`}
+            className={`text-sm font-medium ${highlight ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'
+              } transition-colors`}
           >
             {value}
           </a>
         ) : (
           <p
-            className={`text-sm ${
-              highlight && value !== 'Nog niet verzameld'
+            className={`text-sm ${highlight && value !== 'Nog niet verzameld'
                 ? 'font-semibold text-green-600'
                 : 'text-gray-700'
-            }`}
+              }`}
           >
             {value}
           </p>

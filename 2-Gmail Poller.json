@@ -1,0 +1,1091 @@
+{
+  "name": "2-Gmail Poller",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "a0ec55b0-aa1e-4d45-b3e2-55451de82b01",
+      "name": "Schedule Trigger — Every 1 Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2688,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/settings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "eq.gmail_last_poll"
+            },
+            {
+              "name": "select",
+              "value": "value"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "23df5ff1-168d-4bdd-85c5-a84307f666ce",
+      "name": "Get Last Poll Timestamp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2464,
+        352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract lastPollTime and compute Gmail search query format\nconst raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : (Array.isArray(raw.body) ? raw.body : []);\n\nlet lastPollTime;\nif (rows.length > 0 && rows[0].value) {\n  lastPollTime = rows[0].value;\n} else {\n  // Default: 5 minutes ago if no record exists\n  lastPollTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();\n}\n\n// Format for Gmail search: YYYY/MM/DD\nconst d = new Date(lastPollTime);\nconst gmailAfter = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;\n\n// Also compute epoch seconds for Gmail API after: parameter\nconst epochSeconds = Math.floor(d.getTime() / 1000);\n\nreturn [{\n  json: {\n    lastPollTime: lastPollTime,\n    gmailAfterDate: gmailAfter,\n    epochSeconds: epochSeconds,\n    nowISO: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "263ecce0-74a4-4094-968d-9c8cb5f8a5e9",
+      "name": "Parse Poll Timestamp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2240,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/settings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "eq.gmail_last_poll"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ value: $json.nowISO }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "227f3340-1373-4753-88a8-bd078141e0b9",
+      "name": "Update Poll Timestamp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2016,
+        352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "includeSpamTrash": false
+        }
+      },
+      "id": "c95602ac-9512-46d4-bca6-3067c8fe2d3f",
+      "name": "Gmail — Get New Messages",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1792,
+        352
+      ],
+      "webhookId": "7295b945-a4d8-427c-abfa-0d96554778ad",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-has-emails",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bc9addff-91db-427c-9bbc-38868f159f45",
+      "name": "IF — Any New Emails?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -944,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "83852cb6-936a-4057-8743-fefe1238f633",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -720,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "gmail_message_id",
+              "value": "=eq.{{ $json.id }}"
+            },
+            {
+              "name": "select",
+              "value": "id"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "ed81d905-f083-4162-8676-8a4f2643b3c5",
+      "name": "Check If Already Processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-not-processed",
+              "leftValue": "={{ Array.isArray($json) ? $json.length : (Array.isArray($json.body) ? $json.body.length : 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "62d098b2-3c14-4a48-a242-2e0bfe532f71",
+      "name": "IF — Not Already Processed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract full email details from Gmail item\nconst item = $node['Split In Batches'].json;\n\nconst messageId = item.id || '';\nconst threadId = item.threadId || '';\n\n// ✅ Fixed: Capital S for Subject\nconst subject = item.Subject || item.subject || '(no subject)';\n\n// ✅ Fixed: Body fallback since textPlain not in payload\nconst body = item.textPlain || item.textHtml || item.snippet || '';\n\n// ✅ Fixed: Capital F for From\nconst fromHeader = item.From || item.from || '';\nlet senderName = '';\nlet senderEmail = '';\n\nif (fromHeader) {\n  const match = fromHeader.match(/^(.+?)\\s*<(.+?)>$/);\n  if (match) {\n    senderName = match[1].replace(/\"/g, '').trim();\n    senderEmail = match[2].trim();\n  } else {\n    senderEmail = fromHeader.trim();\n    senderName = senderEmail.split('@')[0];\n  }\n}\n\n// ✅ Fixed: labels is array of objects {id, name} not strings\nconst labelsRaw = item.labels || item.labelIds || [];\nconst labels = labelsRaw.map(l => typeof l === 'object' ? l.name || l.id : l);\n\nreturn [{\n  json: {\n    messageId: messageId,\n    threadId: threadId,\n    subject: subject,\n    body: body.substring(0, 3000),\n    senderName: senderName,\n    senderEmail: senderEmail,\n    labels: labels,\n    snippet: item.snippet || ''\n  }\n}];"
+      },
+      "id": "dc3244e9-bd3c-425e-b1e1-6014d13172ea",
+      "name": "Extract Email Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You classify emails for a professional landscaping and gardening company.\\n\\nCUSTOMER — A real person asking about garden services, lawn care, landscaping, requesting a quote, asking if we do their area, or any genuine customer inquiry.\\n\\nSUPPLIER — A business or individual selling products or services TO the company. Trade suppliers, tool vendors, B2B offers.\\n\\n(SPAM) — Cold sales outreach, marketing newsletters, lead-selling services (\\\"we have customers for you\\\"), phishing, mass mailings, discount offers.\\n\\nINTERNAL — Automated notifications from Google, Stripe, banks, software tools, booking confirmations, receipts.\\n\\nOTHER — Anything that genuinely doesn't fit the above.\\n\\nIMPORTANT:\\n- \\\"We can get you more customers\\\" = SPAM not CUSTOMER\\n- \\\"I want a new garden\\\" = CUSTOMER\\n- Marketing agency offering services = SPAM\\n\\nRespond with JSON only:\\n{\\n  \\\"classification\\\": \\\"CUSTOMER\\\",\\n  \\\"confidence\\\": 0.97,\\n  \\\"reasoning\\\": \\\"Person asking for quote on garden renovation\\\"\\n}",
+              "role": "system"
+            },
+            {
+              "content": "=Subject: {{ $json.subject }}\\nFrom: {{ $json.senderName }} <{{ $json.senderEmail }}>\\n\\nBody:\\n{{ $json.body }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "5c1472e3-775e-4344-aba9-3b625e1d08df",
+      "name": "OpenAI — Classify Email",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        176,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "XR9xujmItcOh3eRv",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Classification Response\nlet classification = 'OTHER';\nlet confidence = 0;\nlet reasoning = '';\n\ntry {\n  // Handle both object and string content formats\n  let rawContent = $input.first().json.message?.content \n                || $input.first().json.choices?.[0]?.message?.content \n                || $input.first().json.text \n                || '';\n\n  // If already object, use directly. If string, parse it\n  let parsed;\n  if (typeof rawContent === 'object' && rawContent !== null) {\n    parsed = rawContent;\n  } else {\n    parsed = JSON.parse(rawContent);\n  }\n\n  classification = parsed.classification || 'OTHER';\n  confidence = parsed.confidence || 0;\n  reasoning = parsed.reasoning || '';\n\n  // Validate classification is one of allowed types\n  const validTypes = ['CUSTOMER', 'SUPPLIER', 'SPAM', 'INTERNAL', 'OTHER'];\n  if (!validTypes.includes(classification)) {\n    classification = 'OTHER';\n  }\n\n} catch (e) {\n  classification = 'OTHER';\n  confidence = 0;\n  reasoning = 'Failed to parse AI classification: ' + e.message;\n}\n\n// Pass through email data from Extract Email Details node\nconst emailData = $node['Extract Email Details'].json;\n\nreturn [{\n  json: {\n    classification: classification,\n    confidence: confidence,\n    reasoning: reasoning,\n    messageId: emailData.messageId,\n    threadId: emailData.threadId,\n    subject: emailData.subject,\n    body: emailData.body,\n    senderName: emailData.senderName,\n    senderEmail: emailData.senderEmail\n  },\n  pairedItem: { item: 0 } // ✅ Fixes paired item error in Gmail node\n}];"
+      },
+      "id": "82a5af47-44e2-41a5-af09-2cfbc1098f19",
+      "name": "Parse Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $node['Parse Classification'].json.messageId }}",
+        "labelIds": "={{ [$json.labelId] }}"
+      },
+      "id": "b7a9a10a-81ad-49d7-92c2-a73889cf5445",
+      "name": "Gmail — Add Classification Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        0
+      ],
+      "webhookId": "12ae5344-1dda-4d65-990d-139e05db1f24",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $node['Parse Classification'].json.classification }}",
+                    "rightValue": "CUSTOMER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f9e4c845-b1d7-454e-8a48-c028d474f10f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $node['Parse Classification'].json.classification }}",
+                    "rightValue": "CUSTOMER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "id": "1584269e-85e2-4aee-ad54-abdaf48fc862"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "d7d73cc7-125c-44cc-abd2-479e5ae0dbac",
+      "name": "Switch — Route by Classification",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1424,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $node['Parse Classification'].json['messageId'] }}"
+      },
+      "id": "49594e34-fbb0-42c3-b9a3-022a5df84143",
+      "name": "Gmail — Mark Customer Email as Read",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1648,
+        -96
+      ],
+      "webhookId": "5bf1308b-1a1d-46d4-bece-4050db411dbb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You write draft email responses and also  subject for a landscaping company owner to review and send.\\n\\nWrite a warm, professional response that:\\n1. Opens by thanking them by name for their message\\n2. Addresses their specific question or request with useful information\\n3. Asks for ANY information missing from this list:\\n   - Phone number (ALWAYS ask if not in email — this is the most critical item)\\n   - Dimensions of the area to be worked on (as Length x Width in meters)\\n   - Photos of the current situation\\n   - Full address of the property\\n4. Mentions we are happy to visit for a free quote\\n5. Ends with this exact signature:\\n\\n---\\nMet vriendelijke groet / Kind regards,\\n\\n[Owner Name]\\n[Company Name]\\nTel: [Phone Number]\\nWebsite: [Website URL]\\n\\nRULES:\\n- Never quote a specific price\\n- Never promise a specific date\\n- Language: match the customer (Dutch or English)\\n- Length: 150-250 words\\n- Format: plain HTML paragraphs only, no fancy styling\\n\\nRespond with the email body HTML only — no JSON wrapper, no subject line",
+              "role": "system"
+            },
+            {
+              "content": "==Customer name: {{ $node['Parse Classification'].json['senderName'] }}\\nEmail: \n\n\n{{ $node['Parse Classification'].json['senderEmail'] }}\\nSubject: \n{{ $node['Parse Classification'].json['subject']}}\\n\\nMessage:\\n\n{{ $node['Parse Classification'].json['body'] }}\n\n\n"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "1f80c0be-f17b-4573-a18a-274a9d1b86aa",
+      "name": "OpenAI — Generate Draft Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1872,
+        -96
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "XR9xujmItcOh3eRv",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract draft content from OpenAI response\nconst rawContent = $input.first().json.message?.content || $input.first().json.choices?.[0]?.message?.content || $input.first().json.text || '';\nconst emailData = $node['Parse Classification'].json;\n\n// ✅ Extract subject from AI response content\nlet extractedSubject = emailData.subject || '';\nlet draftBody = rawContent;\n\nconst subjectMatch = rawContent.match(/^Subject:\\s*(.+)\\n/);\nif (subjectMatch) {\n  extractedSubject = subjectMatch[1].trim();\n  // Remove subject line from body\n  draftBody = rawContent.replace(/^Subject:\\s*.+\\n\\n?/, '').trim();\n}\n\nreturn [{\n  json: {\n    draftBody: draftBody,\n    subject: extractedSubject,          // ✅ New separate subject field\n    messageId: emailData.messageId,\n    threadId: emailData.threadId,\n    senderName: emailData.senderName,\n    senderEmail: emailData.senderEmail,\n    classification: emailData.classification\n  }\n}];"
+      },
+      "id": "fa75d84c-2501-43c1-9203-31ac8494e5af",
+      "name": "Prepare Draft Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ gmail_thread_id: $node['Gmail — Create Draft Reply'].json.message.threadId, gmail_message_id: $node['Gmail — Create Draft Reply'].json.message.id, classification: 'CUSTOMER', subject: $node['Prepare Draft Data'].json.subject, sender_email:$node['Prepare Draft Data'].json.senderEmail , sender_name: $node['Prepare Draft Data'].json.senderName, draft_created: true, draft_gmail_id: $node['Gmail — Create Draft Reply'].json.id || null, processed_at: new Date().toISOString() }) }}\n\n",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "8a54e149-5c99-463d-9bb8-488606f17e07",
+      "name": "Save Email Thread — Customer (with Draft)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2672,
+        0
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ gmail_thread_id: $json.threadId, gmail_message_id: $json.messageId, classification: $json.classification, subject: $json.subject, sender_email: $json.senderEmail, sender_name: $json.senderName, draft_created: false, created_at: new Date().toISOString() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "c1d65762-f097-4e43-ae3d-68a4fb20437c",
+      "name": "Save Email Thread — Other (No Draft)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1648,
+        96
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "0b58d3a8-e443-4e5e-b268-704a78370426",
+      "name": "No Operation — No New Emails",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Global Error Handler for Gmail Poller\nconst error = $input.first().json;\nconst errorMessage = error.message || error.error || 'Unknown error';\nconst errorNode = error.node || error.nodeName || 'Unknown node';\n\nreturn [{\n  json: {\n    type: 'error',\n    description: String(errorMessage).substring(0, 500),\n    metadata: {\n      workflow: 'gmail-poller',\n      node: errorNode,\n      timestamp: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "b2f9177a-db94-4769-8251-41cff398ab7b",
+      "name": "Global Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/system_events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "76821dad-cc09-413d-92b1-ec2e92df5c78",
+      "name": "Log Error to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2464,
+        576
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e9b78c87-e706-4146-8344-33ebcaf891a0",
+      "name": "No Operation — Batch Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        752,
+        0
+      ],
+      "id": "70bb7403-50dd-4236-a403-4276a8396913",
+      "name": "Get many labels",
+      "webhookId": "4971ad89-b7f4-49a3-929e-675933adf730",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all labels\nconst allLabels = $('Get many labels').all().map(i => i.json);\n\n// Get classification from previous node\nconst classification = $('Parse Classification').first().json.classification;\n\n// Find matching label\nconst labelName = classification;\nconst matchedLabel = allLabels.find(l => l.name === labelName);\n\nif (!matchedLabel) {\n  throw new Error(`Label not found: ${labelName} — create it in Gmail first`);\n}\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    labelId: matchedLabel.id  // ✅ Real ID like \"Label_123456\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "dd9d80a4-4e24-40b3-8e91-b2e0f99022d5",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.draftBody }}",
+        "options": {}
+      },
+      "id": "003e6f33-d70a-4301-bad7-b3251846d8b0",
+      "name": "Gmail — Create Draft Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2448,
+        -96
+      ],
+      "webhookId": "39eaa6a3-38b4-4f93-979a-5763d620177c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        352
+      ],
+      "id": "560eb31e-e5f1-4a42-a375-12ba3554d629",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter emails that don't have classification labels yet\nconst classificationLabels = ['CUSTOMER', 'SUPPLIER', 'SPAM', 'INTERNAL', 'OTHER'];\n\nconst results = [];\n\nfor (const item of $input.all()) {\n  const email = item.json;\n  \n  // Get label names from labels array (handles both object and string format)\n  const labelNames = (email.labels || []).map(l => \n    typeof l === 'object' ? (l.name || l.id) : l\n  );\n\n  // Check if any classification label already exists\n  const hasClassificationLabel = labelNames.some(label => \n    classificationLabels.some(cl => label.includes(cl))\n  );\n\n  // ✅ Only pass through emails WITHOUT classification labels\n  if (!hasClassificationLabel) {\n    results.push({\n      json: email,\n      pairedItem: { item: item.index ?? results.length }\n    });\n  }\n}\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1584,
+        352
+      ],
+      "id": "806ea46b-d3e1-401a-8f56-bc60bcf6dcdf",
+      "name": "Code1"
+    }
+  ],
+  "pinData": {
+    "OpenAI — Classify Email": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\n  \"classification\": \"CUSTOMER\",\n  \"confidence\": 0.95,\n  \"reasoning\": \"Person asking for landscape services\"\n}",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ],
+    "OpenAI — Generate Draft Response": [
+      {
+        "json": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Subject: Re: Your Request for Landscape Services\n\nDear Charan Kumar Naidu,\n\nThank you for your message and interest in our landscaping services. We would be more than happy to discuss your landscaping needs and provide you with a free quote.\n\nTo help us better understand your requirements, could you please provide us with the following information:\n\n- Your phone number for WhatsApp communication\n- The dimensions of the area to be worked on (as Length x Width in meters)\n- Photos of the current situation\n- Full address of the property\n\nOnce we have this information, we can proceed with a more detailed discussion about the project. We are also happy to visit the property for a more accurate quote, at no cost to you.\n\nLooking forward to hearing from you soon.\n\n---\nMet vriendelijke groet / Kind regards,\n\n[Owner Name]\n[Company Name]\nTel: [Phone Number]\nWebsite: [Website URL]",
+            "refusal": null,
+            "annotations": []
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger — Every 1 Minute": {
+      "main": [
+        [
+          {
+            "node": "Get Last Poll Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Poll Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Parse Poll Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Poll Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Update Poll Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Poll Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Get New Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Get New Messages": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Any New Emails?": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation — No New Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "No Operation — Batch Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check If Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Already Processed": {
+      "main": [
+        [
+          {
+            "node": "IF — Not Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Not Already Processed": {
+      "main": [
+        [
+          {
+            "node": "Extract Email Details",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email Details": {
+      "main": [
+        [
+          {
+            "node": "OpenAI — Classify Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI — Classify Email": {
+      "main": [
+        [
+          {
+            "node": "Parse Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Classification": {
+      "main": [
+        [
+          {
+            "node": "Get many labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Add Classification Label": {
+      "main": [
+        [
+          {
+            "node": "Switch — Route by Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch — Route by Classification": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Mark Customer Email as Read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Email Thread — Other (No Draft)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Mark Customer Email as Read": {
+      "main": [
+        [
+          {
+            "node": "OpenAI — Generate Draft Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI — Generate Draft Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Draft Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Draft Data": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Create Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Email Thread — Customer (with Draft)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Email Thread — Other (No Draft)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many labels": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Add Classification Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Create Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "Save Email Thread — Customer (with Draft)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "IF — Any New Emails?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0bbd7efb-9c68-40c1-92e6-0689439f333a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "280a1950d3062d1ee5011d8dc582c428d297888da331d4d57d58faa86aaa35bf"
+  },
+  "id": "pmUkonAWRGDQMUfN",
+  "tags": [
+    {
+      "createdAt": "2026-02-18T09:24:09.681Z",
+      "updatedAt": "2026-02-18T09:24:09.681Z",
+      "id": "wDacDrDTEPSclVrT",
+      "name": "Chattie"
+    }
+  ]
+}

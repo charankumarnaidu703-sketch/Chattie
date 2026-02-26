@@ -1,0 +1,293 @@
+{
+  "name": "3-Qualification Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-qualification-summary",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "421c1586-6290-4517-8ad6-e04bdc2bee93",
+      "name": "Webhook — Qualification Summary",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "qualification-summary-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'processing' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "fb4c3f77-328e-4ae9-b734-a86aee2f7e41",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $input.first().json.body?.conversationId || $input.first().json.conversationId }}"
+            },
+            {
+              "name": "select",
+              "value": "*,contacts(*)"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "fe4f34ed-ca5e-465c-8ddf-6ee4c925f001",
+      "name": "Get Conversation + Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build HTML Summary Email\nconst raw = $input.first().json;\nconst rows = Array.isArray(raw) ? raw : (Array.isArray(raw.body) ? raw.body : [raw]);\nconst conv = rows[0] || {};\n\n// Extract contact from nested join\nconst contact = conv.contacts || {};\nconst contactName = contact.name || contact.phone || 'Onbekend';\nconst contactPhone = contact.phone || '';\n\nconst conversationId = conv.id || '';\nconst collectedAddress = conv.collected_address || '-';\nconst collectedWishes = conv.collected_wishes || '-';\nconst collectedDimensions = conv.collected_dimensions || '-';\nconst collectedPhone = conv.collected_phone || 'NIET OPGEGEVEN';\nconst photosCount = Array.isArray(conv.collected_photos) ? conv.collected_photos.length : 0;\n\nconst now = new Date();\nconst dateStr = now.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });\n\nconst html = `<!DOCTYPE html>\n<html>\n<body style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  \n  <div style=\"background: #16a34a; padding: 20px; border-radius: 8px 8px 0 0;\">\n    <h1 style=\"color: white; margin: 0; font-size: 22px;\">✅ Nieuwe Lead Gekwalificeerd</h1>\n    <p style=\"color: #dcfce7; margin: 8px 0 0 0;\">Via WhatsApp — ${dateStr}</p>\n  </div>\n  \n  <div style=\"background: #f0fdf4; padding: 20px; border: 1px solid #86efac; border-top: none;\">\n    \n    <h2 style=\"color: #15803d; margin-top: 0;\">Contactgegevens</h2>\n    <table style=\"width: 100%; border-collapse: collapse;\">\n      <tr><td style=\"padding: 8px; font-weight: bold; width: 130px;\">Naam:</td>\n          <td style=\"padding: 8px;\">${contactName}</td></tr>\n      <tr style=\"background: white;\">\n          <td style=\"padding: 8px; font-weight: bold;\">📞 Telefoon:</td>\n          <td style=\"padding: 8px;\"><strong style=\"color: #16a34a; font-size: 16px;\">${collectedPhone}</strong></td></tr>\n      <tr><td style=\"padding: 8px; font-weight: bold;\">WhatsApp:</td>\n          <td style=\"padding: 8px;\">${contactPhone}</td></tr>\n    </table>\n\n    <h2 style=\"color: #15803d; margin-top: 20px;\">Project Details</h2>\n    <table style=\"width: 100%; border-collapse: collapse;\">\n      <tr><td style=\"padding: 8px; font-weight: bold; width: 130px;\">Adres:</td>\n          <td style=\"padding: 8px;\">${collectedAddress}</td></tr>\n      <tr style=\"background: white;\">\n          <td style=\"padding: 8px; font-weight: bold;\">Wensen:</td>\n          <td style=\"padding: 8px;\">${collectedWishes}</td></tr>\n      <tr><td style=\"padding: 8px; font-weight: bold;\">Afmetingen:</td>\n          <td style=\"padding: 8px;\">${collectedDimensions}</td></tr>\n      <tr style=\"background: white;\">\n          <td style=\"padding: 8px; font-weight: bold;\">Foto's:</td>\n          <td style=\"padding: 8px;\">${photosCount} ontvangen</td></tr>\n    </table>\n\n    <div style=\"margin-top: 20px; padding: 15px; background: #fef9c3; border-radius: 6px; border: 1px solid #fde047;\">\n      <strong>📞 Actie vereist:</strong> Bel ${contactName} op \n      <strong>${collectedPhone !== 'NIET OPGEGEVEN' ? collectedPhone : contactPhone}</strong> om een afspraak in te plannen.\n    </div>\n  </div>\n\n  <div style=\"background: #f8fafc; padding: 12px 20px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;\">\n    <p style=\"color: #94a3b8; font-size: 12px; margin: 0;\">\n      Automatisch gegenereerd door Chattie | Gesprek ID: ${conversationId}\n    </p>\n  </div>\n\n</body>\n</html>`;\n\nreturn [{\n  json: {\n    html: html,\n    contactName: contactName,\n    contactPhone: contactPhone,\n    conversationId: conversationId,\n    emailSubject: `✅ Nieuwe Lead: ${contactName}`\n  }\n}];"
+      },
+      "id": "f01456c3-d0ae-47c2-afdc-70fa66950f28",
+      "name": "Build HTML Summary Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "=charankumar35777@gmail.com",
+        "subject": "={{ $json.emailSubject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "feffcff7-ac84-483f-95b9-635ed890c832",
+      "name": "Gmail — Send Summary to Owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        0
+      ],
+      "webhookId": "be4f0ed6-83d4-4400-a22a-a3f63d5114b0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rmrdhkB7bGKHaKbS",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/conversations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.conversationId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ summary_sent_at: new Date().toISOString(), status: 'qualified' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "de75bf48-19f8-414d-b79c-4020802ec4d9",
+      "name": "Mark Summary Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error Handler\nconst error = $input.first().json;\nreturn [{\n  json: {\n    type: 'error',\n    description: String(error.message || error.error || 'Unknown error').substring(0, 500),\n    metadata: { workflow: 'qualification-summary', node: error.node || 'Unknown', timestamp: new Date().toISOString() }\n  }\n}];"
+      },
+      "id": "5851d8ac-5330-450e-b8cc-2a3bacb90cf0",
+      "name": "Global Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/system_events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "cd9ef9ac-5a86-4105-ad1b-f5d34226bb64",
+      "name": "Log Error to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        272
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook — Qualification Summary": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200 OK": {
+      "main": [
+        [
+          {
+            "node": "Get Conversation + Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conversation + Contact": {
+      "main": [
+        [
+          {
+            "node": "Build HTML Summary Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML Summary Email": {
+      "main": [
+        [
+          {
+            "node": "Gmail — Send Summary to Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail — Send Summary to Owner": {
+      "main": [
+        [
+          {
+            "node": "Mark Summary Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5137722b-c7a5-45af-8e4d-4ecc10fa4eb6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "280a1950d3062d1ee5011d8dc582c428d297888da331d4d57d58faa86aaa35bf"
+  },
+  "id": "CkktP7DTXwCHs3J0",
+  "tags": [
+    {
+      "createdAt": "2026-02-18T09:24:09.681Z",
+      "updatedAt": "2026-02-18T09:24:09.681Z",
+      "id": "wDacDrDTEPSclVrT",
+      "name": "Chattie"
+    }
+  ]
+}

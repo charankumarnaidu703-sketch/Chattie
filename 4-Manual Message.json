@@ -1,0 +1,249 @@
+{
+  "name": "4-Manual Message",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-manual-message",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "313d76e4-261a-440c-a0ae-30647c6bd136",
+      "name": "Webhook — Manual Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "manual-message-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'sending' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "b4ebd207-7ac3-491d-bae7-8d5c54b1cdfa",
+      "name": "Respond 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract payload\nconst body = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    chatId: body.chatId || '',\n    conversationId: body.conversationId || '',\n    text: body.text || ''\n  }\n}];"
+      },
+      "id": "df44408e-60ca-4afa-a702-f3d8a913aac8",
+      "name": "Extract Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api20.unipile.com:15040/api/v1/chats/{{ $json.chatId }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "f806f09b-ebf0-4166-8015-cb6d814b0e95",
+      "name": "Send via Unipile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ conversation_id: $node['Extract Payload'].json.conversationId, direction: 'outbound', content: $node['Extract Payload'].json.text, sent_by_bot: false, sent_at: new Date().toISOString() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "94a3a13e-a92e-481a-bc2d-0fed5956dc6a",
+      "name": "Save Message to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        },
+        "supabaseApi": {
+          "id": "Mu3plQ8MpRAvYJZM",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error Handler\nconst error = $input.first().json;\nreturn [{\n  json: {\n    type: 'error',\n    description: String(error.message || error.error || 'Unknown error').substring(0, 500),\n    metadata: { workflow: 'manual-message', node: error.node || 'Unknown', timestamp: new Date().toISOString() }\n  }\n}];"
+      },
+      "id": "de599e36-3bf5-409a-bbe6-c39fbb34b525",
+      "name": "Global Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/system_events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "cf0d1d71-f6e9-43e3-a007-4289dc616fad",
+      "name": "Log Error to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook — Manual Message": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200 OK": {
+      "main": [
+        [
+          {
+            "node": "Extract Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Payload": {
+      "main": [
+        [
+          {
+            "node": "Send via Unipile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send via Unipile": {
+      "main": [
+        [
+          {
+            "node": "Save Message to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "149795cf-7e15-4aeb-bf9d-74c7fe872e6e",
+  "meta": {
+    "instanceId": "280a1950d3062d1ee5011d8dc582c428d297888da331d4d57d58faa86aaa35bf"
+  },
+  "id": "ZrioJe4e9ajJye5p",
+  "tags": [
+    {
+      "createdAt": "2026-02-18T09:24:09.681Z",
+      "updatedAt": "2026-02-18T09:24:09.681Z",
+      "id": "wDacDrDTEPSclVrT",
+      "name": "Chattie"
+    }
+  ]
+}
