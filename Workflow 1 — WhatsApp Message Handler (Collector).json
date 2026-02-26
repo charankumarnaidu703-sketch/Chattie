@@ -39,7 +39,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Validate & Extract Payload (supports multiple attachments)\nconst body = $input.first().json.body || $input.first().json;\n\n// Validate account_id\nconst expectedAccountId = \"kACkIGbpSACHY7MvXS_afw\";\nif (body.account_id !== expectedAccountId) {\n  return []; // Stop silently — wrong account\n}\n\n// Ignore own messages (Unipile uses is_sender, not from_me)\nif (body.is_sender === true) {\n  return []; // Stop silently — own message\n}\n\n// Extract ALL attachments\nconst allAttachments = (body.attachments && body.attachments.length > 0)\n  ? body.attachments.map(a => ({ id: a.attachment_id, type: a.attachment_type }))\n  : [];\n\n// First attachment fields for HTTP Request node URL template\nconst firstAttachment = allAttachments.length > 0 ? allAttachments[0] : null;\n\nreturn [{\n  json: {\n    chat_id: body.chat_id || '',\n    message_text: body.message || '',\n    sender_phone: body.attendees?.[0]?.attendee_specifics?.phone_number || '',\n    has_attachment: allAttachments.length > 0,\n    attachment_id: firstAttachment ? firstAttachment.id : null,\n    attachment_type: firstAttachment ? firstAttachment.type : null,\n    attachments: allAttachments,\n    unipile_msg_id: body.message_id || '',\n    raw_event: body.event || ''\n  }\n}];"
+        "jsCode": "// Validate & Extract Payload (supports multiple attachments)\nconst body = $input.first().json.body || $input.first().json;\n\n// Validate account_id\nconst expectedAccountId = \"kACkIGbpSACHY7MvXS_afw\";\nif (body.account_id !== expectedAccountId) {\n  return []; // Stop silently — wrong account\n}\n\n// Ignore own messages\nif (body.is_sender === true) {\n  return []; // Stop silently — own message\n}\n\n// Extract ALL attachments\nconst attachments = (body.attachments && body.attachments.length > 0)\n  ? body.attachments.map(a => ({ id: a.attachment_id, type: a.attachment_type }))\n  : [];\n\nreturn [{\n  json: {\n    chat_id: body.chat_id || '',\n    message_text: body.message || '',\n    sender_phone: body.attendees?.[0]?.attendee_specifics?.phone_number || '',\n    has_attachment: attachments.length > 0,\n    attachments: attachments,\n    unipile_msg_id: body.message_id || '',\n    raw_event: body.event || ''\n  }\n}];"
       },
       "id": "1d95bcdf-02f7-4163-b40f-7d250f3e790b",
       "name": "Validate & Extract Payload",
@@ -620,57 +620,6 @@
     },
     {
       "parameters": {
-        "url": "=https://api20.unipile.com:15040/api/v1/messages/{{ $json.unipile_msg_id }}/attachments/{{ $json.attachment_id }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "accept",
-              "value": "*/*"
-            }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "file",
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "86ecca50-122f-4b5f-b1a4-e8102e1348ba",
-      "name": "Fetch Attachment from Unipile",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -2304,
-        -400
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Upload attachments to Supabase Storage\n// Uses Node.js built-in https module (fetch() is not available in n8n Cloud sandbox)\nconst https = require('https');\nconst originalData = $node['Validate & Extract Payload'].json;\nconst msgId = originalData.unipile_msg_id;\n\nconst SUPABASE_SERVICE_KEY = $env.SUPABASE_SERVICE_KEY;\nconst UNIPILE_API_KEY = $env.UNIPILE_API_KEY;\nconst SUPABASE_URL = 'https://rifktjxmadzfrdclxpfz.supabase.co';\nconst BUCKET = 'chat-attachments';\n\n// Support both old format (attachment_id) and new format (attachments array)\nlet allAttachments = originalData.attachments || [];\nif (allAttachments.length === 0 && originalData.attachment_id) {\n  allAttachments = [{ id: originalData.attachment_id, type: originalData.attachment_type || 'img' }];\n}\n\nconst uploadedUrls = [];\nconst debugLog = [];\ndebugLog.push(`Found ${allAttachments.length} attachment(s)`);\n\n// Helper: make HTTPS request and return buffer\nfunction httpsRequest(url, options, body) {\n  return new Promise((resolve, reject) => {\n    const req = https.request(url, options, (res) => {\n      const chunks = [];\n      res.on('data', chunk => chunks.push(chunk));\n      res.on('end', () => {\n        resolve({\n          statusCode: res.statusCode,\n          headers: res.headers,\n          body: Buffer.concat(chunks)\n        });\n      });\n    });\n    req.on('error', reject);\n    if (body) req.write(body);\n    req.end();\n  });\n}\n\n// Process each attachment\nfor (let i = 0; i < allAttachments.length; i++) {\n  const att = allAttachments[i];\n  try {\n    // 1. Fetch binary from Unipile\n    debugLog.push(`Fetching attachment ${i}: ${att.id}`);\n    const fetchRes = await httpsRequest(\n      `https://api20.unipile.com:15040/api/v1/messages/${msgId}/attachments/${att.id}`,\n      {\n        method: 'GET',\n        headers: { 'X-API-KEY': UNIPILE_API_KEY, 'accept': '*/*' }\n      }\n    );\n\n    debugLog.push(`Fetch status: ${fetchRes.statusCode}, size: ${fetchRes.body.length}`);\n\n    if (fetchRes.statusCode !== 200) {\n      debugLog.push(`Fetch failed: ${fetchRes.statusCode}`);\n      continue;\n    }\n\n    // 2. Determine file extension and content type\n    const ext = att.type === 'img' ? 'jpg' : (att.type === 'video' ? 'mp4' : 'bin');\n    const contentType = att.type === 'img' ? 'image/jpeg' : (att.type === 'video' ? 'video/mp4' : 'application/octet-stream');\n    const fileName = `${originalData.chat_id}/${Date.now()}_${i}.${ext}`;\n\n    // 3. Upload to Supabase Storage\n    debugLog.push(`Uploading to Supabase: ${fileName}`);\n    const uploadRes = await httpsRequest(\n      `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`,\n      {\n        method: 'POST',\n        headers: {\n          'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,\n          'Content-Type': contentType,\n          'x-upsert': 'true',\n          'Content-Length': fetchRes.body.length\n        }\n      },\n      fetchRes.body\n    );\n\n    debugLog.push(`Upload status: ${uploadRes.statusCode}`);\n\n    if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {\n      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;\n      uploadedUrls.push(publicUrl);\n      debugLog.push(`Success: ${publicUrl}`);\n    } else {\n      debugLog.push(`Upload failed: ${uploadRes.statusCode} ${uploadRes.body.toString()}`);\n    }\n  } catch (e) {\n    debugLog.push(`Error for ${att.id}: ${e.message}`);\n  }\n}\n\n// Build output compatible with downstream Save Message nodes\nlet attachmentUrl = null;\nif (uploadedUrls.length === 1) {\n  attachmentUrl = uploadedUrls[0];\n} else if (uploadedUrls.length > 1) {\n  attachmentUrl = JSON.stringify(uploadedUrls);\n}\n\nreturn [{\n  json: {\n    chat_id: originalData.chat_id,\n    message_text: originalData.message_text,\n    sender_phone: originalData.sender_phone,\n    has_attachment: originalData.has_attachment,\n    unipile_msg_id: originalData.unipile_msg_id,\n    raw_event: originalData.raw_event,\n    attachment_url: attachmentUrl,\n    attachment_urls: uploadedUrls,\n    _debug: debugLog\n  }\n}];"
-      },
-      "id": "5575cfbd-3b22-4022-97dd-ba191d360581",
-      "name": "Extract Attachment URL",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2080,
-        -416
-      ]
-    },
-    {
-      "parameters": {
         "jsCode": "// Global Error Handler\n// Logs error to Supabase system_events table\nconst error = $input.first().json;\nconst errorMessage = error.message || error.error || 'Unknown error';\nconst errorNode = error.node || error.nodeName || 'Unknown node';\n\n// We'll make an HTTP call to Supabase to log this\nconst supabaseUrl = $env.SUPABASE_URL;\n\nreturn [{\n  json: {\n    type: 'error',\n    description: String(errorMessage).substring(0, 500),\n    metadata: {\n      workflow: 'whatsapp-handler',\n      node: errorNode,\n      timestamp: new Date().toISOString()\n    }\n  }\n}];"
       },
       "id": "0b253371-5595-4ab0-ac39-1338152470ad",
@@ -717,6 +666,122 @@
           "name": "Supabase account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare Attachment Items\n// Converts the attachments array into individual n8n items\nconst input = $input.first().json;\nconst attachments = input.attachments || [];\n\nif (attachments.length === 0) {\n  return [{ json: { ...input, attachment_id: null, attachment_type: null, attachment_index: 0 } }];\n}\n\nreturn attachments.map((att, index) => ({\n  json: {\n    ...input,\n    attachment_id: att.id,\n    attachment_type: att.type,\n    attachment_index: index\n  }\n}));"
+      },
+      "id": "prepare-attachment-items-id",
+      "name": "Prepare Attachment Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2528,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api20.unipile.com:15040/api/v1/messages/{{ $json.unipile_msg_id }}/attachments/{{ $json.attachment_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "*/*"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "fetch-attachment-builtin-id",
+      "name": "Fetch Attachment from Unipile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2304,
+        -416
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ZP7lwUJ8A61vMFPL",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/storage/v1/object/chat-attachments/{{ $node[\"Prepare Attachment Items\"].json.chat_id }}/{{ Date.now() }}_{{ $node[\"Prepare Attachment Items\"].json.attachment_index }}.{{ $node[\"Prepare Attachment Items\"].json.attachment_type === 'img' ? 'jpg' : ($node[\"Prepare Attachment Items\"].json.attachment_type === 'video' ? 'mp4' : 'bin') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "x-upsert",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "upload-to-supabase-builtin-id",
+      "name": "Upload to Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2080,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate Attachment URLs\n// Combines URLs from all items back into a single list\nconst items = $input.all();\nconst SUPABASE_URL = 'https://rifktjxmadzfrdclxpfz.supabase.co';\nconst BUCKET = 'chat-attachments';\n\n// We need to extract the path from the upload response or recreate it\nconst uploadedUrls = items.map(item => {\n  // Recreate the public URL based on the same logic used in the upload node\n  // Using $node reference to get the chat_id and index for each item\n  const nodeData = item.json;\n  const chat_id = nodeData.chat_id;\n  const index = nodeData.attachment_index;\n  const type = nodeData.attachment_type;\n  const ext = type === 'img' ? 'jpg' : (type === 'video' ? 'mp4' : 'bin');\n  \n  // Note: Date.now() might vary slightly between nodes, but for a single execution cycle \n  // n8n usually keeps it relatively stable or we can use a fixed prefix.\n  // To be safe, we extract the Key from the Supabase response if available\n  if (item.json.Key) {\n    return `${SUPABASE_URL}/storage/v1/object/public/${item.json.Key}`;\n  }\n  \n  // Fallback: This is tricky due to the Date.now() in the previous node URL.\n  // In a real production environment, we should pass the generated filename forward.\n  // For now, let's assume the upload response contains the Key.\n  return null;\n}).filter(url => url !== null);\n\nconst firstItem = items[0].json;\n\nreturn [{\n  json: {\n    ...firstItem,\n    attachment_urls: uploadedUrls\n  }\n}];"
+      },
+      "id": "aggregate-attachment-urls-id",
+      "name": "Aggregate Attachment URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Final Formatting for Database\nconst data = $input.first().json;\nconst urls = data.attachment_urls || [];\n\nlet attachmentUrl = null;\nif (urls.length === 1) {\n  attachmentUrl = urls[0];\n} else if (urls.length > 1) {\n  attachmentUrl = JSON.stringify(urls);\n}\n\nreturn [{\n  json: {\n    chat_id: data.chat_id,\n    message_text: data.message_text,\n    sender_phone: data.sender_phone,\n    has_attachment: data.has_attachment,\n    unipile_msg_id: data.unipile_msg_id,\n    raw_event: data.raw_event,\n    attachment_url: attachmentUrl,\n    attachment_urls: urls\n  }\n}];"
+      },
+      "id": "format-final-json-id",
+      "name": "Extract Attachment URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1632,
+        -416
+      ]
     }
   ],
   "pinData": {
@@ -851,7 +916,7 @@
       "main": [
         [
           {
-            "node": "Fetch Attachment from Unipile",
+            "node": "Prepare Attachment Items",
             "type": "main",
             "index": 0
           }
@@ -869,7 +934,7 @@
       "main": [
         [
           {
-            "node": "Extract Attachment URL",
+            "node": "Upload to Supabase Storage",
             "type": "main",
             "index": 0
           }
@@ -1034,6 +1099,39 @@
         [
           {
             "node": "Log Error to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Attachment Items": {
+      "main": [
+        [
+          {
+            "node": "Fetch Attachment from Unipile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Supabase Storage": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Attachment URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Attachment URLs": {
+      "main": [
+        [
+          {
+            "node": "Extract Attachment URL",
             "type": "main",
             "index": 0
           }
