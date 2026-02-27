@@ -408,10 +408,24 @@ function parseMediaUrls(mediaUrl: string | null): string[] {
   return [mediaUrl];
 }
 
+export function getDirectImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const driveRegex = /drive\.google\.com\/(?:file\/d\/|open\?id=)([-\w]+)/;
+  const match = url.match(driveRegex);
+  if (match && match[1]) {
+    // Return direct download/view link for Google Drive
+    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  }
+  return url;
+}
+
 function MessageBubble({ message }: { message: Message }) {
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const isInbound = message.direction === 'inbound';
   const isManual = !message.sent_by_bot && message.direction === 'outbound';
-  const mediaUrls = message.type === 'image' ? parseMediaUrls(message.media_url) : [];
+  
+  const rawMediaUrls = message.type === 'image' ? parseMediaUrls(message.media_url) : [];
+  const mediaUrls = rawMediaUrls.map(getDirectImageUrl);
 
   return (
     <div
@@ -430,27 +444,38 @@ function MessageBubble({ message }: { message: Message }) {
             Handmatig verstuurd
           </span>
         )}
-        {/* Render actual images from Supabase Storage */}
+        {/* Render actual images in a WhatsApp-style grid */}
         {message.type === 'image' && mediaUrls.length > 0 && (
-          <div className={`${mediaUrls.length > 1 ? 'grid grid-cols-2 gap-1' : ''} mb-1.5`}>
-            {mediaUrls.map((url, idx) => (
-              <a
-                key={idx}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={url}
-                  alt={`Foto ${idx + 1}`}
-                  className="rounded-lg max-w-full max-h-60 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
+          <>
+            <div className={`${mediaUrls.length > 1 ? 'grid grid-cols-2 gap-1' : ''} mb-1.5 overflow-hidden rounded-lg`}>
+              {mediaUrls.map((url, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setGalleryOpen(true)}
+                  className="relative group cursor-pointer bg-black/5"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Foto ${idx + 1}`}
+                    className="w-full h-48 sm:h-60 object-cover hover:opacity-90 transition-opacity"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <div className="bg-black/50 p-2 rounded-full text-white backdrop-blur-sm shadow-sm">
+                      <ImageIcon className="h-5 w-5" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Embedded Gallery Modal for this message */}
+            <PhotoGalleryModal
+              photos={mediaUrls}
+              open={galleryOpen}
+              onOpenChange={setGalleryOpen}
+            />
+          </>
         )}
         {/* Fallback: show text label when image has no URL */}
         {message.type === 'image' && mediaUrls.length === 0 && (
@@ -484,7 +509,8 @@ function InfoPanel({
 }) {
   const displayName = contact?.name || contact?.phone || 'Onbekend';
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const photos = conversation.collected_photos || [];
+  const rawPhotos = conversation.collected_photos || [];
+  const photos = rawPhotos.map(getDirectImageUrl);
 
   return (
     <div className="p-4 space-y-6">
