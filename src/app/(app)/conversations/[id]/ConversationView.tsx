@@ -712,12 +712,24 @@ function PhotoGalleryModal({
 
         <div className="w-full h-full p-0 sm:p-8 flex flex-col justify-center items-center">
           {photos[currentIndex].includes('drive.google.com') ? (
-            <iframe
-              src={photos[currentIndex]}
-              className="w-full h-full max-w-4xl border-0 rounded-md bg-transparent"
-              allow="autoplay"
-              title={`Photo preview ${currentIndex + 1}`}
-            />
+            <div className="flex flex-col items-center justify-center p-8 bg-black/40 rounded-xl backdrop-blur-md gap-6 max-w-sm text-center">
+              <div className="h-20 w-20 bg-blue-500/10 rounded-full flex items-center justify-center">
+                <ImageIcon className="h-10 w-10 text-blue-400" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-white font-medium text-lg">Google Drive Foto</h3>
+                <p className="text-gray-400 text-sm">
+                  Deze foto is opgeslagen in Google Drive. Klik op de knop hieronder om deze veilig in een nieuw tabblad te openen.
+                </p>
+              </div>
+              <Button
+                onClick={() => window.open(photos[currentIndex], '_blank')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 h-12 rounded-xl mt-2"
+              >
+                <ImageIcon className="h-5 w-5" />
+                Open Foto
+              </Button>
+            </div>
           ) : (
             <img
               src={photos[currentIndex]}
