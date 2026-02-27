@@ -413,8 +413,8 @@ export function getDirectImageUrl(url: string | null | undefined): string {
   const driveRegex = /drive\.google\.com\/(?:file\/d\/|open\?id=)([-\w]+)/;
   const match = url.match(driveRegex);
   if (match && match[1]) {
-    // Return direct download/view link for Google Drive
-    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    // Return the preview link for Google Drive, which embeds reliably in iframes
+    return `https://drive.google.com/file/d/${match[1]}/preview`;
   }
   return url;
 }
@@ -423,7 +423,7 @@ function MessageBubble({ message }: { message: Message }) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const isInbound = message.direction === 'inbound';
   const isManual = !message.sent_by_bot && message.direction === 'outbound';
-  
+
   const rawMediaUrls = message.type === 'image' ? parseMediaUrls(message.media_url) : [];
   const mediaUrls = rawMediaUrls.map(getDirectImageUrl);
 
@@ -444,30 +444,19 @@ function MessageBubble({ message }: { message: Message }) {
             Handmatig verstuurd
           </span>
         )}
-        {/* Render actual images in a WhatsApp-style grid */}
+        {/* Render "View Photos" button for attachments */}
         {message.type === 'image' && mediaUrls.length > 0 && (
           <>
-            <div className={`${mediaUrls.length > 1 ? 'grid grid-cols-2 gap-1' : ''} mb-1.5 overflow-hidden rounded-lg`}>
-              {mediaUrls.map((url, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setGalleryOpen(true)}
-                  className="relative group cursor-pointer bg-black/5"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt={`Foto ${idx + 1}`}
-                    className="w-full h-48 sm:h-60 object-cover hover:opacity-90 transition-opacity"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                    <div className="bg-black/50 p-2 rounded-full text-white backdrop-blur-sm shadow-sm">
-                      <ImageIcon className="h-5 w-5" />
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div
+              onClick={() => setGalleryOpen(true)}
+              className="flex items-center gap-2 mb-1.5 p-2.5 rounded-lg bg-black/5 hover:bg-black/10 transition-colors cursor-pointer select-none"
+            >
+              <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full">
+                <ImageIcon className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-medium">
+                {mediaUrls.length === 1 ? 'Bekijk foto' : `Bekijk ${mediaUrls.length} foto's`}
+              </span>
             </div>
             {/* Embedded Gallery Modal for this message */}
             <PhotoGalleryModal
@@ -692,13 +681,7 @@ function PhotoGalleryModal({
             size="icon"
             className="text-white hover:bg-white/20 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
             onClick={() => {
-              const link = document.createElement('a');
-              link.href = photos[currentIndex];
-              link.download = `photo-${currentIndex + 1}.jpg`;
-              link.target = "_blank";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+              window.open(photos[currentIndex], '_blank');
             }}
           >
             <Download className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -728,11 +711,20 @@ function PhotoGalleryModal({
         )}
 
         <div className="w-full h-full p-0 sm:p-8 flex flex-col justify-center items-center">
-          <img
-            src={photos[currentIndex]}
-            alt={`Photo ${currentIndex + 1}`}
-            className="max-w-full max-h-full object-contain"
-          />
+          {photos[currentIndex].includes('drive.google.com') ? (
+            <iframe
+              src={photos[currentIndex]}
+              className="w-full h-full max-w-4xl border-0 rounded-md bg-transparent"
+              allow="autoplay"
+              title={`Photo preview ${currentIndex + 1}`}
+            />
+          ) : (
+            <img
+              src={photos[currentIndex]}
+              alt={`Photo ${currentIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
         </div>
 
         {photos.length > 1 && (
