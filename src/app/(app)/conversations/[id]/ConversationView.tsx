@@ -16,7 +16,12 @@ import {
   Camera,
   Loader2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Info,
+  Download,
+  X,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -478,6 +483,8 @@ function InfoPanel({
   contact: Contact;
 }) {
   const displayName = contact?.name || contact?.phone || 'Onbekend';
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const photos = conversation.collected_photos || [];
 
   return (
     <div className="p-4 space-y-6">
@@ -540,13 +547,27 @@ function InfoPanel({
             icon={<Camera className="h-4 w-4 text-gray-400" />}
             label="Foto's"
             value={
-              conversation.collected_photos?.length
-                ? `${conversation.collected_photos.length} ontvangen`
+              photos.length
+                ? `${photos.length} ontvangen`
                 : 'Geen'
+            }
+            action={
+              photos.length > 0 ? (
+                <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} className="h-7 text-xs px-2">
+                  Bekijk foto's
+                </Button>
+              ) : undefined
             }
           />
         </div>
       </div>
+
+      {/* Gallery Modal */}
+      <PhotoGalleryModal
+        photos={photos}
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+      />
 
       {/* Qualification complete badge */}
       {conversation.qualification_complete && (
@@ -576,6 +597,7 @@ function DetailRow({
   isLink = false,
   href,
   highlight = false,
+  action,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -583,31 +605,137 @@ function DetailRow({
   isLink?: boolean;
   href?: string;
   highlight?: boolean;
+  action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-2.5">
-      <div className="flex-shrink-0 mt-0.5">{icon}</div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-gray-400">{label}</p>
-        {isLink && href ? (
-          <a
-            href={href}
-            className={`text-sm font-medium ${highlight ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'
-              } transition-colors`}
-          >
-            {value}
-          </a>
-        ) : (
-          <p
-            className={`text-sm ${highlight && value !== 'Nog niet verzameld'
+    <div className="flex items-start justify-between gap-2.5">
+      <div className="flex items-start gap-2.5 min-w-0">
+        <div className="flex-shrink-0 mt-0.5">{icon}</div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-gray-400">{label}</p>
+          {isLink && href ? (
+            <a
+              href={href}
+              className={`text-sm font-medium ${highlight ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'
+                } transition-colors`}
+            >
+              {value}
+            </a>
+          ) : (
+            <p
+              className={`text-sm ${highlight && value !== 'Nog niet verzameld'
                 ? 'font-semibold text-green-600'
                 : 'text-gray-700'
-              }`}
+                }`}
+            >
+              {value}
+            </p>
+          )}
+        </div>
+      </div>
+      {action && <div className="flex-shrink-0 mt-1">{action}</div>}
+    </div>
+  );
+}
+
+// ─── Photo Gallery Modal ──────────────────────────────────────
+
+function PhotoGalleryModal({
+  photos,
+  open,
+  onOpenChange,
+}: {
+  photos: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col sm:p-4 animate-in fade-in duration-200">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 sm:p-0 absolute top-0 left-0 right-0 z-[110] sm:relative safe-area-top">
+        <div className="bg-black/40 sm:bg-transparent px-3 py-1.5 rounded-full text-white text-sm font-medium backdrop-blur-md">
+          {currentIndex + 1} / {photos.length}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = photos[currentIndex];
+              link.download = `photo-${currentIndex + 1}.jpg`;
+              link.target = "_blank";
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
           >
-            {value}
-          </p>
+            <Download className="h-5 w-5 sm:h-4 sm:w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-5 w-5 sm:h-4 sm:w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Image Container */}
+      <div className="flex-1 min-h-0 relative flex items-center justify-center">
+        {photos.length > 1 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-2 sm:left-4 text-white hover:bg-white/20 h-12 w-12 sm:h-10 sm:w-10 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
+            onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
+          >
+            <ChevronLeft className="h-8 w-8 sm:h-6 sm:w-6" />
+          </Button>
+        )}
+
+        <div className="w-full h-full p-0 sm:p-8 flex flex-col justify-center items-center">
+          <img
+            src={photos[currentIndex]}
+            alt={`Photo ${currentIndex + 1}`}
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+
+        {photos.length > 1 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 sm:right-4 text-white hover:bg-white/20 h-12 w-12 sm:h-10 sm:w-10 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
+            onClick={() => setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
+          >
+            <ChevronRight className="h-8 w-8 sm:h-6 sm:w-6" />
+          </Button>
         )}
       </div>
+
+      {/* Thumbnails (Desktop mostly, hidden on very small screens) */}
+      {photos.length > 1 && (
+        <div className="hidden sm:flex items-center justify-center gap-2 mt-4 pb-4">
+          {photos.map((photo, idx) => (
+            <button
+              key={photo}
+              onClick={() => setCurrentIndex(idx)}
+              className={`relative h-16 w-16 rounded-md overflow-hidden transition-all ${idx === currentIndex ? 'ring-2 ring-white scale-110' : 'opacity-50 hover:opacity-100'
+                }`}
+            >
+              <img src={photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
