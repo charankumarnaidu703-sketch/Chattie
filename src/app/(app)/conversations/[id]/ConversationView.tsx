@@ -101,8 +101,22 @@ export function ConversationView({
         (payload) => {
           const newMessage = payload.new as Message;
           setMessages((prev) => {
-            // Deduplicate
+            // Deduplicate by real ID
             if (prev.some((m) => m.id === newMessage.id)) return prev;
+
+            // Replace optimistic message with the real one
+            const optimisticIndex = prev.findIndex(
+              (m) =>
+                m.id.startsWith('optimistic-') &&
+                m.direction === newMessage.direction &&
+                m.content === newMessage.content
+            );
+            if (optimisticIndex !== -1) {
+              const updated = [...prev];
+              updated[optimisticIndex] = newMessage;
+              return updated;
+            }
+
             return [...prev, newMessage];
           });
           scrollToBottom();
