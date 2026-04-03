@@ -73,6 +73,7 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
   const [data, setData] = useState<Record<string, Record<string, string>>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize form state from database rows
   useEffect(() => {
@@ -97,32 +98,40 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
 
   const saveSection = async (section: SectionConfig) => {
     setSaving(section.category);
+    setError(null);
     try {
       for (const field of section.fields) {
         const value = getValue(section.category, field.key);
         // Check if row exists
-        const { data: existing } = await supabase
+        const { data: existing, error: selectError } = await supabase
           .from('company_knowledge')
           .select('id')
           .eq('category', section.category)
           .eq('key', field.key)
           .maybeSingle();
 
+        if (selectError) {
+          setError(`Fout: ${selectError.message}. Heb je de SQL migratie al uitgevoerd?`);
+          return;
+        }
+
         if (existing) {
-          await supabase
+          const { error: updateError } = await supabase
             .from('company_knowledge')
             .update({ value })
             .eq('id', existing.id);
+          if (updateError) { setError(`Opslaan mislukt: ${updateError.message}`); return; }
         } else {
-          await supabase
+          const { error: insertError } = await supabase
             .from('company_knowledge')
             .insert({ category: section.category, key: field.key, value });
+          if (insertError) { setError(`Opslaan mislukt: ${insertError.message}`); return; }
         }
       }
       setSaved(section.category);
       setTimeout(() => setSaved(null), 2000);
     } catch (err) {
-      console.error('Save error:', err);
+      setError(`Onverwachte fout: ${err instanceof Error ? err.message : 'Onbekend'}`);
     } finally {
       setSaving(null);
     }
@@ -140,6 +149,13 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
           Deze informatie wordt gebruikt door de AI voor e-mail concepten en klantgesprekken.
         </p>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+          <strong>⚠️ Fout:</strong> {error}
+        </div>
+      )}
 
       {/* Sections */}
       {SECTIONS.map((section) => (

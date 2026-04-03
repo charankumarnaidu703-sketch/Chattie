@@ -1,26 +1,26 @@
-import { Suspense } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import CompanyInfoClient from './CompanyInfoClient';
-import { DashboardSkeleton } from '@/components/LoadingSkeleton';
 
 export const dynamic = 'force-dynamic';
 
-async function CompanyInfoContent() {
+export default async function CompanyInfoPage() {
   const supabase = await createServerSupabaseClient();
 
-  const { data: knowledgeRows } = await supabase
-    .from('company_knowledge')
-    .select('id, category, key, value')
-    .order('category')
-    .order('key');
+  let knowledgeRows: { id: string; category: string; key: string; value: string }[] = [];
 
-  return <CompanyInfoClient initialData={knowledgeRows ?? []} />;
-}
+  try {
+    const { data, error } = await supabase
+      .from('company_knowledge')
+      .select('id, category, key, value')
+      .order('category')
+      .order('key');
 
-export default function CompanyInfoPage() {
-  return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <CompanyInfoContent />
-    </Suspense>
-  );
+    if (!error && data) {
+      knowledgeRows = data;
+    }
+  } catch {
+    // Table might not exist yet — show empty form
+  }
+
+  return <CompanyInfoClient initialData={knowledgeRows} />;
 }
