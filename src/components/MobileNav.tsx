@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MessageSquare, Mail, Phone } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Mail, Phone, Building2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -10,6 +10,8 @@ const navItems = [
   { href: '/conversations', label: 'Gesprekken', icon: MessageSquare },
   { href: '/emails', label: 'Emails', icon: Mail },
   { href: '/call-notes', label: 'Belnotities', icon: Phone },
+  { href: '/company-info', label: 'Bedrijf', icon: Building2 },
+  { href: '/follow-ups', label: 'Follow-ups', icon: Clock },
 ];
 
 export function MobileNav() {

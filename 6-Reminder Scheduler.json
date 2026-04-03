@@ -1,0 +1,414 @@
+{
+  "name": "6-Reminder Scheduler",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "reminder-trigger-001",
+      "name": "Schedule Trigger — Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "qualification_complete",
+              "value": "eq.false"
+            },
+            {
+              "name": "bot_paused",
+              "value": "eq.false"
+            },
+            {
+              "name": "status",
+              "value": "eq.active"
+            },
+            {
+              "name": "reminders_sent",
+              "value": "lt.2"
+            },
+            {
+              "name": "select",
+              "value": "*"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "reminder-find-stale-001",
+      "name": "Find Stale Conversations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter conversations that are due for a reminder based on timing\nconst items = $input.all();\nconst results = [];\nconst now = new Date();\n\nfor (const item of items) {\n  const conv = item.json;\n  if (!conv.id || !conv.whatsapp_chat_id) continue;\n  \n  const lastActivity = new Date(conv.updated_at || conv.created_at);\n  const hoursSinceActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);\n  \n  const remindersSent = conv.reminders_sent || 0;\n  \n  let shouldRemind = false;\n  let reminderType = '';\n  \n  if (remindersSent === 0 && hoursSinceActivity >= 24) {\n    shouldRemind = true;\n    reminderType = '24h';\n  } else if (remindersSent === 1 && hoursSinceActivity >= 72) {\n    shouldRemind = true;\n    reminderType = '72h';\n  }\n  \n  if (shouldRemind) {\n    results.push({\n      json: {\n        conversation_id: conv.id,\n        contact_id: conv.contact_id,\n        whatsapp_chat_id: conv.whatsapp_chat_id,\n        qualification_step: conv.qualification_step || 1,\n        reminders_sent: remindersSent,\n        reminder_type: reminderType,\n        collected_address: conv.collected_address,\n        collected_wishes: conv.collected_wishes,\n        collected_dimensions: conv.collected_dimensions,\n        collected_email: conv.collected_email,\n        collected_photos: conv.collected_photos\n      }\n    });\n  }\n}\n\nreturn results.length > 0 ? results : [];"
+      },
+      "id": "reminder-check-timing-001",
+      "name": "Check Timing — Due for Reminder?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "conversation_id",
+              "value": "=eq.{{ $json.conversation_id }}"
+            },
+            {
+              "name": "select",
+              "value": "direction,content,type,sent_at"
+            },
+            {
+              "name": "order",
+              "value": "sent_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "15"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "reminder-get-history-001",
+      "name": "Get Message History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build context for Claude to generate a contextual reminder\nconst convData = $('Check Timing — Due for Reminder?').first().json;\nconst rawHistory = $input.first().json;\n\n// Parse message history\nlet messages = [];\nif (Array.isArray(rawHistory)) {\n  messages = rawHistory;\n} else if (Array.isArray(rawHistory.body)) {\n  messages = rawHistory.body;\n} else if (rawHistory.content) {\n  messages = [rawHistory];\n}\n\n// Reverse to chronological order and format\nconst orderedHistory = [...messages].reverse();\nconst historyStr = orderedHistory.map((m, i) => {\n  const dir = m.direction === 'outbound' ? 'BOT' : 'CUSTOMER';\n  const content = m.type === 'image' ? '[Photo]' : m.content;\n  return `${dir}: ${content}`;\n}).join('\\n');\n\nconst stepNames = {\n  1: 'property address',\n  2: 'garden wishes/project description',\n  3: 'garden dimensions (LxW meters)',\n  4: 'photos of the current situation',\n  5: 'email address for the quote'\n};\n\nconst nextStep = stepNames[convData.qualification_step] || 'property address';\n\nconst prompt = `CONVERSATION HISTORY:\\n${historyStr || '(No messages yet)'}\\n\\nCONVERSATION STATUS:\\nReminder type: ${convData.reminder_type} (${convData.reminder_type === '24h' ? 'first gentle nudge' : 'second follow-up, slightly more urgent'})\\nNext info needed: ${nextStep}\\nQualification step: ${convData.qualification_step}/5\\nData collected so far: Address=${convData.collected_address || 'no'}, Wishes=${convData.collected_wishes || 'no'}, Dimensions=${convData.collected_dimensions || 'no'}, Email=${convData.collected_email || 'no'}`;\n\nreturn [{\n  json: {\n    promptMessage: prompt,\n    conversation_id: convData.conversation_id,\n    contact_id: convData.contact_id,\n    whatsapp_chat_id: convData.whatsapp_chat_id,\n    reminders_sent: convData.reminders_sent,\n    reminder_type: convData.reminder_type\n  }\n}];"
+      },
+      "id": "reminder-build-context-001",
+      "name": "Build AI Reminder Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-20250514",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-20250514"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.promptMessage }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "system": "You are the friendly WhatsApp chatbot assistant for a professional landscaping/gardening company. You need to write a follow-up reminder message to a customer who stopped responding during the qualification process.\n\n## RULES\n1. Read the conversation history to understand the context and tone\n2. Match the language the customer was using (Dutch or English). If unsure, default to Dutch.\n3. Sound WARM, HUMAN, and NATURAL — like a real person checking in, NOT like an automated reminder\n4. Keep the message SHORT: 1-2 sentences max\n5. Reference specific details from the conversation when possible (e.g., their garden project, their address)\n6. Gently nudge them to provide the next piece of information needed\n7. For 24h reminders: be gentle and casual\n8. For 72h reminders: be slightly more persistent but still friendly, express that you'd hate to lose them\n9. NEVER mention pricing, costs, or scheduling — only collect qualification info\n10. Use a casual WhatsApp tone with occasional emoji (1-2 max)\n11. Do NOT be overly formal or corporate\n\n## OUTPUT FORMAT\nReturn ONLY the reminder message text. Nothing else — no JSON, no explanation, just the message."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "reminder-claude-001",
+      "name": "Claude — Generate Reminder",
+      "credentials": {
+        "anthropicApi": {
+          "id": "Uxj5WgLtWNZRaMuE",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the reminder text from Claude's response\nconst convData = $('Build AI Reminder Context').first().json;\nconst rawText = $input.first().json.content?.[0]?.text || $input.first().json.content || '';\n\n// Clean up — remove any accidental markdown or extra whitespace\nlet reminderText = typeof rawText === 'string' ? rawText.trim() : String(rawText).trim();\n\n// Fallback if empty\nif (!reminderText) {\n  reminderText = 'Hey! 👋 We merkten dat je nog niet hebt gereageerd. We helpen je graag verder met je tuinproject!';\n}\n\nreturn [{\n  json: {\n    reminder_text: reminderText,\n    conversation_id: convData.conversation_id,\n    contact_id: convData.contact_id,\n    whatsapp_chat_id: convData.whatsapp_chat_id,\n    reminders_sent: convData.reminders_sent,\n    reminder_type: convData.reminder_type\n  }\n}];"
+      },
+      "id": "reminder-parse-001",
+      "name": "Parse Reminder Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api20.unipile.com:15040/api/v1/chats/{{ $json.whatsapp_chat_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.reminder_text }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "reminder-send-whatsapp-001",
+      "name": "Send Reminder via Unipile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KdDOYvWmsn0w3P5s",
+          "name": "Uniphile"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ conversation_id: $json.conversation_id, direction: 'outbound', content: $json.reminder_text, sent_by_bot: true, type: 'text', sent_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "reminder-save-message-001",
+      "name": "Save Reminder Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1792,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.conversation_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ reminders_sent: ($json.reminders_sent || 0) + 1, updated_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "reminder-update-counter-001",
+      "name": "Increment Reminders Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2016,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger — Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Find Stale Conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Stale Conversations": {
+      "main": [
+        [
+          {
+            "node": "Check Timing — Due for Reminder?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Timing — Due for Reminder?": {
+      "main": [
+        [
+          {
+            "node": "Get Message History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Message History": {
+      "main": [
+        [
+          {
+            "node": "Build AI Reminder Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build AI Reminder Context": {
+      "main": [
+        [
+          {
+            "node": "Claude — Generate Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude — Generate Reminder": {
+      "main": [
+        [
+          {
+            "node": "Parse Reminder Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reminder Text": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder via Unipile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reminder via Unipile": {
+      "main": [
+        [
+          {
+            "node": "Save Reminder Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Reminder Message": {
+      "main": [
+        [
+          {
+            "node": "Increment Reminders Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a6103a2320145fe974541bf1a458566a4cb3c085416cbbe1576bf2fa5e798d37"
+  }
+}

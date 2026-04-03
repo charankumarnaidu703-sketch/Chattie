@@ -24,7 +24,7 @@ export const QUALIFICATION_STEPS = [
   { step: 2, label: 'Wensen', field: 'collected_wishes' as const, icon: '🌿' },
   { step: 3, label: 'Afmetingen', field: 'collected_dimensions' as const, icon: '📐' },
   { step: 4, label: "Foto's", field: 'collected_photos' as const, icon: '📷' },
-  { step: 5, label: 'Telefoon', field: 'collected_phone' as const, icon: '📞' },
+  { step: 5, label: 'E-mail', field: 'collected_email' as const, icon: '📧' },
 ] as const;
 
 // Badge color helpers

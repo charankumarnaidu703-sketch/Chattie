@@ -24,6 +24,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      company_knowledge: {
+        Row: {
+          id: string;
+          category: string;
+          key: string;
+          value: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          category: string;
+          key: string;
+          value: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          category?: string;
+          key?: string;
+          value?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       contacts: {
         Row: {
           id: string;
@@ -66,6 +90,8 @@ export type Database = {
           collected_dimensions: string | null;
           collected_photos: string[];
           collected_phone: string | null;
+          collected_email: string | null;
+          reminders_sent: number;
           qualification_step: number;
           qualification_complete: boolean;
           summary_sent_at: string | null;
@@ -83,6 +109,8 @@ export type Database = {
           collected_dimensions?: string | null;
           collected_photos?: string[];
           collected_phone?: string | null;
+          collected_email?: string | null;
+          reminders_sent?: number;
           qualification_step?: number;
           qualification_complete?: boolean;
           summary_sent_at?: string | null;
@@ -100,6 +128,8 @@ export type Database = {
           collected_dimensions?: string | null;
           collected_photos?: string[];
           collected_phone?: string | null;
+          collected_email?: string | null;
+          reminders_sent?: number;
           qualification_step?: number;
           qualification_complete?: boolean;
           summary_sent_at?: string | null;

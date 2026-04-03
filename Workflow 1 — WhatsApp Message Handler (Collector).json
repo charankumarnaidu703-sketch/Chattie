@@ -1,5 +1,4 @@
 {
-  "name": "Workflow 1 — WhatsApp Message Handler (Collector)",
   "nodes": [
     {
       "parameters": {
@@ -10,13 +9,13 @@
           "rawBody": true
         }
       },
-      "id": "1f4b4771-f4f8-46ff-a726-d659e72ef30d",
-      "name": "Webhook — WhatsApp Incoming",
+      "id": "2eaee100-0d23-49f2-9621-ca6cbf55d2dc",
+      "name": "Webhook — WhatsApp Incoming1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -3200,
-        -336
+        -4208,
+        1328
       ],
       "webhookId": "whatsapp-incoming-webhook"
     },
@@ -28,26 +27,26 @@
           "responseCode": 200
         }
       },
-      "id": "9b60bd5c-72b6-4fd8-abff-8f70ce988b90",
-      "name": "Respond 200 OK",
+      "id": "11bd9a38-ea41-4faa-b007-7f04bf0ab560",
+      "name": "Respond 200 OK1",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        -2976,
-        -336
+        -3984,
+        1328
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Validate & Extract Payload (supports multiple attachments)\nconst body = $input.first().json.body || $input.first().json;\n\n// Validate account_id\nconst expectedAccountId = \"kACkIGbpSACHY7MvXS_afw\";\nif (body.account_id !== expectedAccountId) {\n  return []; // Stop silently — wrong account\n}\n\n// Ignore own messages\nif (body.is_sender === true) {\n  return []; // Stop silently — own message\n}\n\n// Extract ALL attachments\nconst attachments = (body.attachments && body.attachments.length > 0)\n  ? body.attachments.map(a => ({ id: a.attachment_id, type: a.attachment_type }))\n  : [];\n\nreturn [{\n  json: {\n    chat_id: body.chat_id || '',\n    message_text: body.message || '',\n    sender_phone: body.attendees?.[0]?.attendee_specifics?.phone_number || '',\n    has_attachment: attachments.length > 0,\n    attachments: attachments,\n    unipile_msg_id: body.message_id || '',\n    raw_event: body.event || ''\n  }\n}];"
+        "jsCode": "// Validate & Extract Payload (supports multiple attachments + quoted attachments)\nconst body = $input.first().json.body || $input.first().json;\n\n// Validate account_id\nconst expectedAccountId = \"kACkIGbpSACHY7MvXS_afw\";\nif (body.account_id !== expectedAccountId) {\n  return []; // Stop silently — wrong account\n}\n\n// Ignore own messages\nif (body.is_sender === true) {\n  return []; // Stop silently — own message\n}\n\n// Extract direct attachments (body.attachments)\nconst directAttachments = (body.attachments && body.attachments.length > 0)\n  ? body.attachments.map(a => ({\n      id: a.attachment_id || a.id,\n      type: a.attachment_type || a.type,\n      source: 'direct'\n    }))\n  : [];\n\n// Extract quoted attachments (body.quoted.attachments) ← THIS WAS MISSING\nconst quotedAttachments = (body.quoted?.attachments && body.quoted.attachments.length > 0)\n  ? body.quoted.attachments.map(a => ({\n      id: a.attachment_id || a.id,\n      type: a.attachment_type || a.type,\n      source: 'quoted'\n    }))\n  : [];\n\n// Merge both arrays\nconst attachments = [...directAttachments, ...quotedAttachments];\n\nreturn [{\n  json: {\n    chat_id: body.chat_id || '',\n    message_text: body.message || '',\n    sender_phone: body.attendees?.[0]?.attendee_specifics?.phone_number || '',\n    has_attachment: attachments.length > 0,\n    attachments: attachments,\n    unipile_msg_id: body.message_id || '',\n    raw_event: body.event || ''\n  }\n}];"
       },
-      "id": "1d95bcdf-02f7-4163-b40f-7d250f3e790b",
-      "name": "Validate & Extract Payload",
+      "id": "ccd5ed41-2f7e-41f7-87db-a4fd023bf70b",
+      "name": "Validate & Extract Payload1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2752,
-        -336
+        -3760,
+        1328
       ],
       "executeOnce": false,
       "alwaysOutputData": true
@@ -78,18 +77,18 @@
           }
         }
       },
-      "id": "262a8fee-8092-430e-a5c9-6b38270274d7",
-      "name": "Check Duplicate Message",
+      "id": "3d183d15-84d9-43ee-97d5-dc0b7c27f48e",
+      "name": "Check Duplicate Message1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1856,
-        -336
+        -2192,
+        1328
       ],
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -128,13 +127,13 @@
         },
         "options": {}
       },
-      "id": "110fc9c2-c404-4f6c-aef2-58286f2a7ca7",
-      "name": "IF — Not Duplicate",
+      "id": "d6067c9c-9669-4228-a10d-47683ba95e7e",
+      "name": "IF — Not Duplicate1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1632,
-        -336
+        -1968,
+        1328
       ]
     },
     {
@@ -147,7 +146,7 @@
           "parameters": [
             {
               "name": "whatsapp_chat_id",
-              "value": "=eq.{{ $node['Validate & Extract Payload'].json.chat_id }}"
+              "value": "=eq.{{ $node['Validate & Extract Payload1'].json.chat_id }}"
             },
             {
               "name": "select",
@@ -163,22 +162,18 @@
           }
         }
       },
-      "id": "13f72bc0-7264-46c1-ba65-df699143b15e",
-      "name": "Get Conversation",
+      "id": "2c636778-b74d-42a2-ae11-3afe388cdd06",
+      "name": "Get Conversation1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1408,
-        -336
+        -1744,
+        1328
       ],
       "alwaysOutputData": true,
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -228,13 +223,13 @@
         "looseTypeValidation": true,
         "options": {}
       },
-      "id": "7c7e0ac7-2d98-4241-83d0-56d8062f03dd",
-      "name": "IF — Conversation Exists",
+      "id": "26c34e3b-5692-4f00-a47d-0090a91545fc",
+      "name": "IF — Conversation Exists1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1184,
-        -336
+        -1520,
+        1328
       ]
     },
     {
@@ -254,7 +249,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: $node['Validate & Extract Payload'].json.sender_phone }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $node['Validate & Extract Payload1'].json.sender_phone }) }}",
         "options": {
           "response": {
             "response": {
@@ -263,21 +258,17 @@
           }
         }
       },
-      "id": "c214384d-e33e-474e-9f41-a1c71b17833d",
-      "name": "Create Contact",
+      "id": "53c41580-3b00-4f4d-b47b-a162bc43ac3c",
+      "name": "Create Contact1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -960,
-        -240
+        -1296,
+        1424
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -299,7 +290,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ contact_id: (Array.isArray($json) ? $json[0].id : $json.id), whatsapp_chat_id: $node['Validate & Extract Payload'].json.chat_id, status: 'active', bot_paused: false, qualification_complete: false, qualification_step: 1 }) }}",
+        "jsonBody": "={{ JSON.stringify({ contact_id: (Array.isArray($json) ? $json[0].id : $json.id), whatsapp_chat_id: $node['Validate & Extract Payload1'].json.chat_id, status: 'active', bot_paused: false, qualification_complete: false, qualification_step: 1 }) }}",
         "options": {
           "response": {
             "response": {
@@ -308,49 +299,45 @@
           }
         }
       },
-      "id": "8211272e-3e18-46f8-aed1-d5901684391f",
-      "name": "Create Conversation",
+      "id": "419459d2-ba81-454c-946f-cc0261320ea0",
+      "name": "Create Conversation1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -736,
-        -240
+        -1072,
+        1424
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Merge conversation data from either existing or newly created path\nconst items = $input.all();\nconst data = items[0].json;\n\n// Handle both array response (Supabase) and direct object\nconst conv = Array.isArray(data) ? data[0] : (data.body ? (Array.isArray(data.body) ? data.body[0] : data.body) : data);\n\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    contact_id: conv.contact_id,\n    whatsapp_chat_id: conv.whatsapp_chat_id || $node['Validate & Extract Payload'].json.chat_id,\n    bot_paused: conv.bot_paused || false,\n    qualification_complete: conv.qualification_complete || false,\n    qualification_step: conv.qualification_step || 1,\n    collected_address: conv.collected_address || null,\n    collected_wishes: conv.collected_wishes || null,\n    collected_dimensions: conv.collected_dimensions || null,\n    collected_phone: conv.collected_phone || null,\n    collected_photos: conv.collected_photos || [],\n    status: conv.status || 'active',\n    // Carry forward message data\n    chat_id: $node['Validate & Extract Payload'].json.chat_id,\n    message_text: $node['Validate & Extract Payload'].json.message_text,\n    sender_phone: $node['Validate & Extract Payload'].json.sender_phone,\n    has_attachment: $node['Validate & Extract Payload'].json.has_attachment,\n    attachment_url: $node['Validate & Extract Payload'].json.attachment_url || null,\n    unipile_msg_id: $node['Validate & Extract Payload'].json.unipile_msg_id\n  }\n}];"
+        "jsCode": "// Merge conversation data from either existing or newly created path\nconst items = $input.all();\nconst data = items[0].json;\n\n// Handle both array response (Supabase) and direct object\nconst conv = Array.isArray(data) ? data[0] : (data.body ? (Array.isArray(data.body) ? data.body[0] : data.body) : data);\n\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    contact_id: conv.contact_id,\n    whatsapp_chat_id: conv.whatsapp_chat_id || $node['Validate & Extract Payload1'].json.chat_id,\n    bot_paused: conv.bot_paused || false,\n    qualification_complete: conv.qualification_complete || false,\n    qualification_step: conv.qualification_step || 1,\n    collected_address: conv.collected_address || null,\n    collected_wishes: conv.collected_wishes || null,\n    collected_dimensions: conv.collected_dimensions || null,\n    collected_email: conv.collected_email || null,\n    collected_photos: conv.collected_photos || [],\n    status: conv.status || 'active',\n    // Carry forward message data\n    chat_id: $node['Validate & Extract Payload1'].json.chat_id,\n    message_text: $node['Validate & Extract Payload1'].json.message_text,\n    sender_phone: $node['Validate & Extract Payload1'].json.sender_phone,\n    has_attachment: $node['Validate & Extract Payload1'].json.has_attachment,\n    attachment_url: $node['Validate & Extract Payload1'].json.attachment_url || null,\n    unipile_msg_id: $node['Validate & Extract Payload1'].json.unipile_msg_id\n  }\n}];"
       },
-      "id": "441df435-3d97-4974-ac99-04739ddbb3aa",
-      "name": "Normalize Conversation Data — Existing",
+      "id": "f7dd4890-a624-4401-8aa0-144877108d93",
+      "name": "Normalize Conversation Data — Existing1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -512,
-        -432
+        -848,
+        1232
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Normalize newly-created conversation data\nconst items = $input.all();\nconst data = items[0].json;\n\nconst conv = Array.isArray(data) ? data[0] : (data.body ? (Array.isArray(data.body) ? data.body[0] : data.body) : data);\n\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    contact_id: conv.contact_id,\n    whatsapp_chat_id: conv.whatsapp_chat_id || $node['Validate & Extract Payload'].json.chat_id,\n    bot_paused: false,\n    qualification_complete: false,\n    qualification_step: 1,\n    collected_address: null,\n    collected_wishes: null,\n    collected_dimensions: null,\n    collected_phone: null,\n    collected_photos: [],\n    status: 'active',\n    // Carry forward message data\n    chat_id: $node['Validate & Extract Payload'].json.chat_id,\n    message_text: $node['Validate & Extract Payload'].json.message_text,\n    sender_phone: $node['Validate & Extract Payload'].json.sender_phone,\n    has_attachment: $node['Validate & Extract Payload'].json.has_attachment,\n    attachment_url: $node['Validate & Extract Payload'].json.attachment_url || null,\n    unipile_msg_id: $node['Validate & Extract Payload'].json.unipile_msg_id\n  }\n}];"
+        "jsCode": "// Normalize newly-created conversation data\nconst items = $input.all();\nconst data = items[0].json;\n\nconst conv = Array.isArray(data) ? data[0] : (data.body ? (Array.isArray(data.body) ? data.body[0] : data.body) : data);\n\nreturn [{\n  json: {\n    conversation_id: conv.id,\n    contact_id: conv.contact_id,\n    whatsapp_chat_id: conv.whatsapp_chat_id || $node['Validate & Extract Payload1'].json.chat_id,\n    bot_paused: false,\n    qualification_complete: false,\n    qualification_step: 1,\n    collected_address: null,\n    collected_wishes: null,\n    collected_dimensions: null,\n    collected_email: null,\n    collected_photos: [],\n    status: 'active',\n    // Carry forward message data\n    chat_id: $node['Validate & Extract Payload1'].json.chat_id,\n    message_text: $node['Validate & Extract Payload1'].json.message_text,\n    sender_phone: $node['Validate & Extract Payload1'].json.sender_phone,\n    has_attachment: $node['Validate & Extract Payload1'].json.has_attachment,\n    attachment_url: $node['Validate & Extract Payload1'].json.attachment_url || null,\n    unipile_msg_id: $node['Validate & Extract Payload1'].json.unipile_msg_id\n  }\n}];"
       },
-      "id": "aefa217d-efbc-4a45-94c6-a8152b99a5b7",
-      "name": "Normalize Conversation Data — New",
+      "id": "4395c67d-26fd-4b24-be5a-0c4e7e9b6442",
+      "name": "Normalize Conversation Data — New1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -512,
-        -240
+        -848,
+        1424
       ]
     },
     {
@@ -377,13 +364,13 @@
         },
         "options": {}
       },
-      "id": "ea7b18bd-039a-4cf5-9936-996db5d5976a",
-      "name": "IF — Bot Paused",
+      "id": "2d7b7848-66f4-4821-a359-4c4e6d0bb032",
+      "name": "IF — Bot Paused1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -288,
-        -336
+        -624,
+        1328
       ]
     },
     {
@@ -406,21 +393,17 @@
         "jsonBody": "={{ JSON.stringify({ conversation_id: $json.conversation_id, direction: 'inbound', content: $json.message_text, unipile_msg_id: $json.unipile_msg_id, type: $json.has_attachment ? 'image' : 'text', media_url: $json.attachment_url || null, sent_at: new Date().toISOString() }) }}",
         "options": {}
       },
-      "id": "2e0182fd-c84a-4fb9-bef5-cce903ab8f1f",
-      "name": "Save Inbound Message — Paused",
+      "id": "1bf388c2-ebf4-47cd-b071-74b920737e9c",
+      "name": "Save Inbound Message — Paused1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -64,
-        -432
+        -400,
+        1232
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -449,13 +432,13 @@
         },
         "options": {}
       },
-      "id": "65f4cc10-ca4e-4176-8655-235864fdb801",
-      "name": "IF — Qualification Complete",
+      "id": "c94f3294-7280-4bde-98c8-c4f73734f7d2",
+      "name": "IF — Qualification Complete1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -64,
-        -240
+        -400,
+        1424
       ]
     },
     {
@@ -478,60 +461,17 @@
         "jsonBody": "={{ JSON.stringify({ conversation_id: $json.conversation_id, direction: 'inbound', content: $json.message_text, unipile_msg_id: $json.unipile_msg_id, type: $json.has_attachment ? 'image' : 'text', media_url: $json.attachment_url || null, sent_at: new Date().toISOString() }) }}",
         "options": {}
       },
-      "id": "93efeb61-d9c6-42c4-ac94-1d22f892036b",
-      "name": "Save Inbound Message — Qualified",
+      "id": "7a4b5fb2-31cc-4b21-80e1-d123de95d871",
+      "name": "Save Inbound Message — Qualified1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        160,
-        -336
+        -176,
+        1328
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "supabaseApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Prefer",
-              "value": "return=representation"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ conversation_id: $json.conversation_id, direction: 'inbound', content: $json.message_text, unipile_msg_id: $json.unipile_msg_id, type: $json.has_attachment ? 'image' : 'text', media_url: $json.attachment_url || null, sent_at: new Date().toISOString() }) }}",
-        "options": {}
-      },
-      "id": "ab47f0ac-67cb-4b15-a19d-228ab293faa2",
-      "name": "Save Inbound Message — Active",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        160,
-        -144
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
-        "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -566,21 +506,17 @@
           }
         }
       },
-      "id": "bc105245-17f9-4883-84fd-e052ff5d655e",
-      "name": "Update Pending Since",
+      "id": "81b7a89e-166e-4d68-b501-30baac6ea1e5",
+      "name": "Update Pending Since1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        384,
-        -144
+        48,
+        1424
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -609,75 +545,26 @@
         },
         "options": {}
       },
-      "id": "768d7fbf-d1a9-4489-9390-c560b9368e89",
-      "name": "IF — Has Attachment",
+      "id": "0903bc46-1c4c-4603-9fa9-8d162dd3886e",
+      "name": "IF — Has Attachment1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -2528,
-        -336
+        -3536,
+        1328
       ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Global Error Handler\n// Logs error to Supabase system_events table\nconst error = $input.first().json;\nconst errorMessage = error.message || error.error || 'Unknown error';\nconst errorNode = error.node || error.nodeName || 'Unknown node';\n\n// We'll make an HTTP call to Supabase to log this\nconst supabaseUrl = $env.SUPABASE_URL;\n\nreturn [{\n  json: {\n    type: 'error',\n    description: String(errorMessage).substring(0, 500),\n    metadata: {\n      workflow: 'whatsapp-handler',\n      node: errorNode,\n      timestamp: new Date().toISOString()\n    }\n  }\n}];"
-      },
-      "id": "0b253371-5595-4ab0-ac39-1338152470ad",
-      "name": "Global Error Handler",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -3200,
-        80
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/system_events",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "supabaseApi",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "21ac5bf6-36a4-4f09-8ee0-721789e4d307",
-      "name": "Log Error to Supabase",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -2976,
-        80
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
-        "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
-          "name": "Supabase account"
-        }
-      }
     },
     {
       "parameters": {
         "jsCode": "// Prepare Attachment Items\n// Converts the attachments array into individual n8n items\nconst input = $input.first().json;\nconst attachments = input.attachments || [];\n\nif (attachments.length === 0) {\n  return [{ json: { ...input, attachment_id: null, attachment_type: null, attachment_index: 0 } }];\n}\n\nreturn attachments.map((att, index) => ({\n  json: {\n    ...input,\n    attachment_id: att.id,\n    attachment_type: att.type,\n    attachment_index: index\n  }\n}));"
       },
-      "id": "prepare-attachment-items-id",
-      "name": "Prepare Attachment Items",
+      "id": "2a213881-3b05-48c0-bd77-3724b8d068c0",
+      "name": "Prepare Attachment Items1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2528,
-        -400
+        -3312,
+        1264
       ]
     },
     {
@@ -697,463 +584,415 @@
         "options": {
           "response": {
             "response": {
-              "neverError": true,
-              "responseFormat": "file"
-            }
-          }
-        }
-      },
-      "id": "fetch-attachment-builtin-id",
-      "name": "Fetch Attachment from Unipile",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -2304,
-        -416
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/storage/v1/object/chat-attachments/{{ $node[\"Prepare Attachment Items\"].json.chat_id }}/{{ Date.now() }}_{{ $node[\"Prepare Attachment Items\"].json.attachment_index }}.{{ $node[\"Prepare Attachment Items\"].json.attachment_type === 'img' ? 'jpg' : ($node[\"Prepare Attachment Items\"].json.attachment_type === 'video' ? 'mp4' : 'bin') }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
-            },
-            {
-              "name": "x-upsert",
-              "value": "true"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "binaryData",
-        "inputDataFieldName": "data",
-        "options": {
-          "response": {
-            "response": {
               "neverError": true
             }
           }
         }
       },
-      "id": "upload-to-supabase-builtin-id",
-      "name": "Upload to Supabase Storage",
+      "id": "7d904218-99a7-4006-a8fd-b2e2905d868e",
+      "name": "Fetch Attachment from Unipile1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2080,
-        -416
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Aggregate Attachment URLs\n// Combines URLs from all items back into a single list\nconst items = $input.all();\nconst SUPABASE_URL = 'https://rifktjxmadzfrdclxpfz.supabase.co';\nconst BUCKET = 'chat-attachments';\n\n// We need to extract the path from the upload response or recreate it\nconst uploadedUrls = items.map(item => {\n  // Recreate the public URL based on the same logic used in the upload node\n  // Using $node reference to get the chat_id and index for each item\n  const nodeData = item.json;\n  const chat_id = nodeData.chat_id;\n  const index = nodeData.attachment_index;\n  const type = nodeData.attachment_type;\n  const ext = type === 'img' ? 'jpg' : (type === 'video' ? 'mp4' : 'bin');\n  \n  // Note: Date.now() might vary slightly between nodes, but for a single execution cycle \n  // n8n usually keeps it relatively stable or we can use a fixed prefix.\n  // To be safe, we extract the Key from the Supabase response if available\n  if (item.json.Key) {\n    return `${SUPABASE_URL}/storage/v1/object/public/${item.json.Key}`;\n  }\n  \n  // Fallback: This is tricky due to the Date.now() in the previous node URL.\n  // In a real production environment, we should pass the generated filename forward.\n  // For now, let's assume the upload response contains the Key.\n  return null;\n}).filter(url => url !== null);\n\nconst firstItem = items[0].json;\n\nreturn [{\n  json: {\n    ...firstItem,\n    attachment_urls: uploadedUrls\n  }\n}];"
-      },
-      "id": "aggregate-attachment-urls-id",
-      "name": "Aggregate Attachment URLs",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1856,
-        -416
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Final Formatting for Database\nconst data = $input.first().json;\nconst urls = data.attachment_urls || [];\n\nlet attachmentUrl = null;\nif (urls.length === 1) {\n  attachmentUrl = urls[0];\n} else if (urls.length > 1) {\n  attachmentUrl = JSON.stringify(urls);\n}\n\nreturn [{\n  json: {\n    chat_id: data.chat_id,\n    message_text: data.message_text,\n    sender_phone: data.sender_phone,\n    has_attachment: data.has_attachment,\n    unipile_msg_id: data.unipile_msg_id,\n    raw_event: data.raw_event,\n    attachment_url: attachmentUrl,\n    attachment_urls: urls\n  }\n}];"
-      },
-      "id": "format-final-json-id",
-      "name": "Extract Attachment URL",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1632,
-        -416
-      ]
-    }
-  ],
-  "pinData": {
-    "Webhook — WhatsApp Incoming": [
-      {
-        "json": {
-          "headers": {
-            "host": "niekbevisible.app.n8n.cloud",
-            "user-agent": "axios/1.7.7",
-            "content-length": "1357",
-            "accept": "application/json, text/plain, */*",
-            "accept-encoding": "gzip, br",
-            "cdn-loop": "cloudflare; loops=1; subreqs=1",
-            "cf-connecting-ip": "62.210.90.194",
-            "cf-ew-via": "15",
-            "cf-ipcountry": "FR",
-            "cf-ray": "9d35261969666eb7-CDG",
-            "cf-visitor": "{\"scheme\":\"https\"}",
-            "cf-worker": "n8n.cloud",
-            "content-type": "application/json",
-            "x-forwarded-for": "62.210.90.194, 172.69.223.141",
-            "x-forwarded-host": "niekbevisible.app.n8n.cloud",
-            "x-forwarded-port": "443",
-            "x-forwarded-proto": "https",
-            "x-forwarded-server": "traefik-prod-users-gwc-26-7b6dc7c86c-dbhqg",
-            "x-is-trusted": "yes",
-            "x-real-ip": "62.210.90.194"
-          },
-          "params": {},
-          "query": {},
-          "body": {
-            "event": "message_received",
-            "account_id": "kACkIGbpSACHY7MvXS_afw",
-            "account_type": "WHATSAPP",
-            "account_info": {
-              "type": "WHATSAPP",
-              "phone_number": "+31685874653"
-            },
-            "webhook_name": "Chattie-Production ",
-            "chat_id": "myzCcHqJVJSxYgfDL-viYQ",
-            "attendees": [
-              {
-                "attendee_id": "bhAHgJ_-TEGrbyw3OCiAmg",
-                "attendee_provider_id": "49766138413280@lid",
-                "attendee_name": "ch3rry",
-                "attendee_profile_url": null,
-                "attendee_specifics": {
-                  "provider": "WHATSAPP",
-                  "phone_number": "+918328554159",
-                  "lid": "49766138413280@lid"
-                },
-                "attendee_public_identifier": "918328554159@s.whatsapp.net"
-              }
-            ],
-            "sender": {
-              "attendee_id": "bhAHgJ_-TEGrbyw3OCiAmg",
-              "attendee_provider_id": "49766138413280@lid",
-              "attendee_name": "ch3rry",
-              "attendee_profile_url": null,
-              "attendee_specifics": {
-                "provider": "WHATSAPP",
-                "phone_number": "+918328554159",
-                "lid": "49766138413280@lid"
-              },
-              "attendee_public_identifier": "918328554159@s.whatsapp.net"
-            },
-            "message": "Okay wait this are the photos",
-            "message_id": "f1Cr5ffkX-yARQvkh1QXTg",
-            "timestamp": "2026-02-25T06:29:31.000Z",
-            "attachments": [
-              {
-                "attachment_id": "AC1431D8B24F57DBA22E0D038C44B75F",
-                "attachment_type": "img",
-                "attachment_url": null,
-                "attachment_size": null
-              }
-            ],
-            "is_sender": false,
-            "provider_chat_id": "918328554159@s.whatsapp.net",
-            "provider_message_id": "AC1431D8B24F57DBA22E0D038C44B75F",
-            "is_event": 0,
-            "chat_pinned": 0,
-            "quoted": null,
-            "chat_content_type": null,
-            "message_type": null,
-            "is_group": false,
-            "folder": [
-              "INBOX"
-            ]
-          },
-          "webhookUrl": "https://niekbevisible.app.n8n.cloud/webhook/whatsapp-incoming",
-          "executionMode": "production"
+        -3088,
+        1264
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KdDOYvWmsn0w3P5s",
+          "name": "Uniphile"
         }
       }
-    ]
-  },
-  "connections": {
-    "Webhook — WhatsApp Incoming": {
-      "main": [
-        [
-          {
-            "node": "Respond 200 OK",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     },
-    "Respond 200 OK": {
-      "main": [
-        [
-          {
-            "node": "Validate & Extract Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Validate & Extract Payload": {
-      "main": [
-        [
-          {
-            "node": "IF — Has Attachment",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF — Has Attachment": {
-      "main": [
-        [
-          {
-            "node": "Prepare Attachment Items",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Check Duplicate Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch Attachment from Unipile": {
-      "main": [
-        [
-          {
-            "node": "Upload to Supabase Storage",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Attachment URL": {
-      "main": [
-        [
-          {
-            "node": "Check Duplicate Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Duplicate Message": {
-      "main": [
-        [
-          {
-            "node": "IF — Not Duplicate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF — Not Duplicate": {
-      "main": [
-        [
-          {
-            "node": "Get Conversation",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Conversation": {
-      "main": [
-        [
-          {
-            "node": "IF — Conversation Exists",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF — Conversation Exists": {
-      "main": [
-        [
-          {
-            "node": "Normalize Conversation Data — Existing",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create Contact",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Contact": {
-      "main": [
-        [
-          {
-            "node": "Create Conversation",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Conversation": {
-      "main": [
-        [
-          {
-            "node": "Normalize Conversation Data — New",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Conversation Data — Existing": {
-      "main": [
-        [
-          {
-            "node": "IF — Bot Paused",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize Conversation Data — New": {
-      "main": [
-        [
-          {
-            "node": "IF — Bot Paused",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF — Bot Paused": {
-      "main": [
-        [
-          {
-            "node": "Save Inbound Message — Paused",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "IF — Qualification Complete",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF — Qualification Complete": {
-      "main": [
-        [
-          {
-            "node": "Save Inbound Message — Qualified",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Save Inbound Message — Active",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Save Inbound Message — Active": {
-      "main": [
-        [
-          {
-            "node": "Update Pending Since",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Global Error Handler": {
-      "main": [
-        [
-          {
-            "node": "Log Error to Supabase",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Attachment Items": {
-      "main": [
-        [
-          {
-            "node": "Fetch Attachment from Unipile",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Upload to Supabase Storage": {
-      "main": [
-        [
-          {
-            "node": "Aggregate Attachment URLs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Aggregate Attachment URLs": {
-      "main": [
-        [
-          {
-            "node": "Extract Attachment URL",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "4cde06e3-ddeb-4e1f-a505-67a49afef735",
-  "meta": {
-    "instanceId": "280a1950d3062d1ee5011d8dc582c428d297888da331d4d57d58faa86aaa35bf"
-  },
-  "id": "G19tjXJtveiSlblo",
-  "tags": [
     {
-      "createdAt": "2026-02-18T09:24:09.681Z",
-      "updatedAt": "2026-02-18T09:24:09.681Z",
-      "id": "wDacDrDTEPSclVrT",
-      "name": "Chattie"
+      "parameters": {
+        "name": "={{$binary.data.fileName}}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -2864,
+        1264
+      ],
+      "id": "5db86ff2-0089-4ee0-a203-79aeab5be454",
+      "name": "Upload file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "70Pt8HIDLQ6KXk0Y",
+          "name": "Charan Gdrive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a141f826-ac3e-4ab6-88a5-cafc909d5bcc",
+              "name": "url",
+              "value": "={{ 'https://drive.google.com/uc?export=view&id=' +$('Upload file1').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2416,
+        1264
+      ],
+      "id": "660053bf-fd8e-418a-9b20-cead50f61017",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ conversation_id: $json.conversation_id, direction: 'inbound', content: $json.message_text, unipile_msg_id: $json.unipile_msg_id, type: $json.has_attachment ? 'image' : 'text', media_url: $json.has_attachment ? ($('Edit Fields1').item.json.url ?? null) : null, sent_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "95f860c0-6b93-4deb-a12f-e1ce33508266",
+      "name": "Save Inbound Message — Active1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -176,
+        1520
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "share",
+        "folderNoRootId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone",
+            "allowFileDiscovery": true
+          }
+        },
+        "options": {
+          "transferOwnership": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -2672,
+        1264
+      ],
+      "id": "93dbd99c-e433-4833-825a-36f3c8ad2491",
+      "name": "Share folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "70Pt8HIDLQ6KXk0Y",
+          "name": "Charan Gdrive"
+        }
+      }
     }
-  ]
+  ],
+  "connections": {
+    "Webhook — WhatsApp Incoming1": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 OK1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200 OK1": {
+      "main": [
+        [
+          {
+            "node": "Validate & Extract Payload1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Extract Payload1": {
+      "main": [
+        [
+          {
+            "node": "IF — Has Attachment1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate Message1": {
+      "main": [
+        [
+          {
+            "node": "IF — Not Duplicate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Not Duplicate1": {
+      "main": [
+        [
+          {
+            "node": "Get Conversation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conversation1": {
+      "main": [
+        [
+          {
+            "node": "IF — Conversation Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Conversation Exists1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Conversation Data — Existing1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact1": {
+      "main": [
+        [
+          {
+            "node": "Create Conversation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Conversation1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Conversation Data — New1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Conversation Data — Existing1": {
+      "main": [
+        [
+          {
+            "node": "IF — Bot Paused1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Conversation Data — New1": {
+      "main": [
+        [
+          {
+            "node": "IF — Bot Paused1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Bot Paused1": {
+      "main": [
+        [
+          {
+            "node": "Save Inbound Message — Paused1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF — Qualification Complete1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Qualification Complete1": {
+      "main": [
+        [
+          {
+            "node": "Save Inbound Message — Qualified1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Inbound Message — Active1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Inbound Message — Qualified1": {
+      "main": [
+        [
+          {
+            "node": "Update Pending Since1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Has Attachment1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Attachment Items1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Duplicate Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Attachment Items1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Attachment from Unipile1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Attachment from Unipile1": {
+      "main": [
+        [
+          {
+            "node": "Upload file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file1": {
+      "main": [
+        [
+          {
+            "node": "Share folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Inbound Message — Active1": {
+      "main": [
+        [
+          {
+            "node": "Update Pending Since1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share folder": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a6103a2320145fe974541bf1a458566a4cb3c085416cbbe1576bf2fa5e798d37"
+  }
 }

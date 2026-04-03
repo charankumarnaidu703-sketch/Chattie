@@ -1,24 +1,202 @@
 {
-  "name": "Workflow 1B — Debounce Processor",
   "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-reset-requested",
+              "leftValue": "={{ $json.reset_requested }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "58e26a03-6055-4645-b2d8-ac8dd7e3ee5c",
+      "name": "IF — Reset Requested",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2496,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "conversation_id",
+              "value": "=eq.{{ $json.conversation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "0c72cdc4-0531-4b96-b71a-77e4274a1866",
+      "name": "Delete Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2208,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $node['IF — Reset Requested'].json.conversation_id }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "53b025d4-a2b2-4a2d-8542-8d579703b6bc",
+      "name": "Delete Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1920,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/contacts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $node['IF — Reset Requested'].json.contact_id }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "d8ce4bed-9b4e-4f7b-a8bb-af39da0eb201",
+      "name": "Delete Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1696,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api20.unipile.com:15040/api/v1/chats/{{ $node['IF — Reset Requested'].json.whatsapp_chat_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: 'Your conversation has been reset. You can start fresh by sending a new message! 🌿' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "9b850918-57b7-4b15-80a4-0dd011030ba9",
+      "name": "Send Reset Confirmation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1472,
+        304
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KdDOYvWmsn0w3P5s",
+          "name": "Uniphile"
+        }
+      }
+    },
     {
       "parameters": {
         "rule": {
           "interval": [
             {
               "field": "seconds",
-              "secondsInterval": 15
+              "secondsInterval": 5
             }
           ]
         }
       },
-      "id": "1c07ef6b-20b3-4a55-aafb-d3bd479d5738",
-      "name": "Schedule Trigger — Every 15s",
+      "id": "1223c600-b4bd-4e9a-9930-a0dae59e5618",
+      "name": "Schedule Trigger — Every 15s1",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -3008,
-        144
+        -3616,
+        400
       ]
     },
     {
@@ -38,10 +216,6 @@
               "value": "eq.false"
             },
             {
-              "name": "qualification_complete",
-              "value": "eq.false"
-            },
-            {
               "name": "select",
               "value": "*"
             }
@@ -55,37 +229,33 @@
           }
         }
       },
-      "id": "8a5a551b-302e-4dff-ab13-8032e656d412",
-      "name": "Find Pending Conversations",
+      "id": "6b95ff04-f9ed-4567-8c4b-13b1dfdc7725",
+      "name": "Find Pending Conversations1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2784,
-        144
+        -3392,
+        400
       ],
       "alwaysOutputData": true,
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Filter: only conversations where pending_since is older than 15 seconds\n// This ensures we wait for the customer to finish typing\nconst items = $input.all();\nconst results = [];\nconst now = new Date();\nconst DEBOUNCE_SECONDS = 15;\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Skip if no pending_since\n  if (!data.pending_since) continue;\n  \n  const pendingSince = new Date(data.pending_since);\n  const ageSeconds = (now.getTime() - pendingSince.getTime()) / 1000;\n  \n  // Only process if pending for at least DEBOUNCE_SECONDS\n  if (ageSeconds >= DEBOUNCE_SECONDS) {\n    results.push({\n      json: {\n        conversation_id: data.id,\n        contact_id: data.contact_id,\n        whatsapp_chat_id: data.whatsapp_chat_id,\n        bot_paused: data.bot_paused,\n        qualification_complete: data.qualification_complete,\n        qualification_step: data.qualification_step || 1,\n        collected_address: data.collected_address || null,\n        collected_wishes: data.collected_wishes || null,\n        collected_dimensions: data.collected_dimensions || null,\n        collected_phone: data.collected_phone || null,\n        collected_photos: data.collected_photos || [],\n        pending_since: data.pending_since\n      }\n    });\n  }\n}\n\nreturn results.length > 0 ? results : [];"
+        "jsCode": "// Filter: only conversations where pending_since is older than 15 seconds\n// This ensures we wait for the customer to finish typing\n// Also detects RESET command from the latest inbound message\nconst items = $input.all();\nconst results = [];\nconst now = new Date();\nconst DEBOUNCE_SECONDS = 15;\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Skip if no pending_since\n  if (!data.pending_since) continue;\n  \n  const pendingSince = new Date(data.pending_since);\n  const ageSeconds = (now.getTime() - pendingSince.getTime()) / 1000;\n  \n  // Only process if pending for at least DEBOUNCE_SECONDS\n  if (ageSeconds >= DEBOUNCE_SECONDS) {\n    // Check if latest message is RESET command\n    // We'll check in the next step after fetching message history\n    results.push({\n      json: {\n        conversation_id: data.id,\n        contact_id: data.contact_id,\n        whatsapp_chat_id: data.whatsapp_chat_id,\n        bot_paused: data.bot_paused,\n        qualification_complete: data.qualification_complete,\n        qualification_step: data.qualification_step || 1,\n        collected_address: data.collected_address || null,\n        collected_wishes: data.collected_wishes || null,\n        collected_dimensions: data.collected_dimensions || null,\n        collected_email: data.collected_email || null,\n        collected_photos: data.collected_photos || [],\n        pending_since: data.pending_since\n      }\n    });\n  }\n}\n\nreturn results.length > 0 ? results : [];"
       },
-      "id": "7c3b59c3-973c-4aab-9724-4b0268f7a29d",
-      "name": "Filter — Ready to Process",
+      "id": "626b9e32-3005-45dd-a46a-96f87a7162b1",
+      "name": "Filter — Ready to Process1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2560,
-        144
+        -3168,
+        400
       ]
     },
     {
@@ -122,89 +292,46 @@
           }
         }
       },
-      "id": "46cd0644-cb5c-40d4-957b-37b98653811c",
-      "name": "Get Message History",
+      "id": "f2f65089-9ad2-498f-a31d-282b7eb016a2",
+      "name": "Get Message History1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -2336,
-        144
+        -2944,
+        400
       ],
       "alwaysOutputData": true,
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Build OpenAI message with ALL new messages batched together\n// Get conversation data from the Filter node\nconst convNode = $('Filter — Ready to Process').first().json;\n\n// Get message history — use .all() to grab every message item\nlet history;\ntry {\n  const allItems = $('Get Message History').all();\n  history = allItems.map(item => item.json);\n} catch(e) {\n  history = [];\n}\n\nconst orderedHistory = [...history].reverse();\n\n// Find the last bot message index to separate old history from new messages\nlet lastBotIndex = -1;\nfor (let i = orderedHistory.length - 1; i >= 0; i--) {\n  if (orderedHistory[i].direction === 'outbound') {\n    lastBotIndex = i;\n    break;\n  }\n}\n\n// Old history = everything up to and including last bot message\n// New messages = everything after last bot message\nconst oldHistory = lastBotIndex >= 0 ? orderedHistory.slice(0, lastBotIndex + 1) : [];\nconst newMessages = lastBotIndex >= 0 ? orderedHistory.slice(lastBotIndex + 1) : orderedHistory;\n\n// Format old history — structured with direction, content, type\nconst historyStr = oldHistory.map((m, i) => {\n  return `[${i + 1}] Direction: ${m.direction} | Type: ${m.type} | Content: ${m.content}`;\n}).join('\\n');\n\n// Format new messages — structured with direction, content, type\nconst newMsgStr = newMessages.map((m, i) => {\n  const content = m.type === 'image' ? '[Photo attachment]' : m.content;\n  return `[${i + 1}] Direction: ${m.direction} | Type: ${m.type} | Content: ${content}`;\n}).join('\\n');\n\nconst hasAnyPhoto = newMessages.some(m => m.type === 'image');\n\nconst userMessage = `COLLECTED DATA:\nAddress: ${convNode.collected_address ?? 'NOT YET COLLECTED'}\nWishes: ${convNode.collected_wishes ?? 'NOT YET COLLECTED'}\nDimensions: ${convNode.collected_dimensions ?? 'NOT YET COLLECTED'}\nPhotos received: ${Array.isArray(convNode.collected_photos) ? convNode.collected_photos.length : 0}\nPhone: ${convNode.collected_phone ?? 'NOT YET COLLECTED'}\nCurrent step: ${convNode.qualification_step ?? 1}\n\nMESSAGE HISTORY:\n${historyStr || '(No prior messages)'}\n\nNEW MESSAGES FROM CUSTOMER (sent in quick succession — treat as ONE combined response):\n${newMsgStr || '(No new messages)'}\n\nHAS PHOTO ATTACHMENT IN NEW MESSAGES: ${hasAnyPhoto}`;\n\nreturn [{\n  json: {\n    userMessage: userMessage,\n    conversation_id: convNode.conversation_id,\n    contact_id: convNode.contact_id,\n    whatsapp_chat_id: convNode.whatsapp_chat_id,\n    qualification_step: convNode.qualification_step,\n    collected_address: convNode.collected_address,\n    collected_wishes: convNode.collected_wishes,\n    collected_dimensions: convNode.collected_dimensions,\n    collected_phone: convNode.collected_phone,\n    collected_photos: convNode.collected_photos\n  }\n}];"
+        "jsCode": "// Build OpenAI message with ALL new messages batched together\n// Get conversation data from the Filter node\nconst convNode = $('Filter — Ready to Process1').first().json;\n\n// Get message history — use .all() to grab every message item\nlet history;\ntry {\n  const allItems = $('Get Message History1').all();\n  history = allItems.map(item => item.json);\n} catch(e) {\n  history = [];\n}\n\nconst orderedHistory = [...history].reverse();\n\n// Check for RESET command in the latest inbound messages\nconst latestInbound = orderedHistory.filter(m => m.direction === 'inbound');\nconst lastInboundMsg = latestInbound.length > 0 ? latestInbound[latestInbound.length - 1] : null;\nconst isReset = lastInboundMsg && lastInboundMsg.content && lastInboundMsg.content.trim().toUpperCase() === 'RESET';\n\nif (isReset) {\n  return [{\n    json: {\n      reset_requested: true,\n      conversation_id: convNode.conversation_id,\n      contact_id: convNode.contact_id,\n      whatsapp_chat_id: convNode.whatsapp_chat_id\n    }\n  }];\n}\n\n// Find the last bot message index to separate old history from new messages\nlet lastBotIndex = -1;\nfor (let i = orderedHistory.length - 1; i >= 0; i--) {\n  if (orderedHistory[i].direction === 'outbound') {\n    lastBotIndex = i;\n    break;\n  }\n}\n\n// Old history = everything up to and including last bot message\n// New messages = everything after last bot message\nconst oldHistory = lastBotIndex >= 0 ? orderedHistory.slice(0, lastBotIndex + 1) : [];\nconst newMessages = lastBotIndex >= 0 ? orderedHistory.slice(lastBotIndex + 1) : orderedHistory;\n\n// Format old history — structured with direction, content, type\nconst historyStr = oldHistory.map((m, i) => {\n  return `[${i + 1}] Direction: ${m.direction} | Type: ${m.type} | Content: ${m.content}`;\n}).join('\\n');\n\n// Format new messages — structured with direction, content, type\nconst newMsgStr = newMessages.map((m, i) => {\n  const content = m.type === 'image' ? '[Photo attachment]' : m.content;\n  return `[${i + 1}] Direction: ${m.direction} | Type: ${m.type} | Content: ${content}`;\n}).join('\\n');\n\nconst hasAnyPhoto = newMessages.some(m => m.type === 'image');\n\nconst userMessage = `COLLECTED DATA:\nAddress: ${convNode.collected_address ?? 'NOT YET COLLECTED'}\nWishes: ${convNode.collected_wishes ?? 'NOT YET COLLECTED'}\nDimensions: ${convNode.collected_dimensions ?? 'NOT YET COLLECTED'}\nPhotos received: ${Array.isArray(convNode.collected_photos) ? convNode.collected_photos.length : 0}\nEmail: ${convNode.collected_email ?? 'NOT YET COLLECTED'}\nCurrent step: ${convNode.qualification_step ?? 1}\nQualification complete: ${convNode.qualification_complete ? 'YES' : 'NO'}\n\nMESSAGE HISTORY:\n${historyStr || '(No prior messages)'}\n\nNEW MESSAGES FROM CUSTOMER (sent in quick succession — treat as ONE combined response):\n${newMsgStr || '(No new messages)'}\n\nHAS PHOTO ATTACHMENT IN NEW MESSAGES: ${hasAnyPhoto}`;\n\nreturn [{\n  json: {\n    reset_requested: false,\n    userMessage: userMessage,\n    conversation_id: convNode.conversation_id,\n    contact_id: convNode.contact_id,\n    whatsapp_chat_id: convNode.whatsapp_chat_id,\n    qualification_complete: convNode.qualification_complete,\n    qualification_step: convNode.qualification_step,\n    collected_address: convNode.collected_address,\n    collected_wishes: convNode.collected_wishes,\n    collected_dimensions: convNode.collected_dimensions,\n    collected_email: convNode.collected_email,\n    collected_photos: convNode.collected_photos\n  }\n}];"
       },
-      "id": "5713c811-b628-4210-9e81-b95e8df5a0a5",
-      "name": "Build OpenAI Message",
+      "id": "6a4fb6a3-ff54-49c6-9363-aa3f71c69c56",
+      "name": "Build OpenAI Message1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2112,
-        144
+        -2720,
+        400
       ]
     },
     {
       "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "gpt-4o",
-          "mode": "list",
-          "cachedResultName": "GPT-4O"
-        },
-        "messages": {
-          "values": [
-            {
-              "content": "=You are a friendly customer service assistant for a professional landscaping and gardening company. Your job is to qualify potential customers by collecting 5 specific pieces of information in strict order.\\n\\n## YOUR PERSONALITY\\n- Warm, professional, enthusiastic about garden projects\\n- Natural, conversational — never robotic\\n- Each response STARTS with a brief varied acknowledgment of what the customer said\\n- Keep responses SHORT: maximum 2-3 sentences\\n- Match language: English \\n\\n## STRICT QUALIFICATION STEPS — COLLECT IN THIS ORDER ONLY\\nStep 1: ADDRESS — Ask for the property address\\nStep 2: WISHES — Ask what they want done to their garden/property\\nStep 3: DIMENSIONS — Ask for dimensions as LENGTH x WIDTH in meters (e.g. \\\"8x6 meter\\\")\\nStep 4: PHOTOS — Ask them to send photos of the current situation\\nStep 5: PHONE — Ask for phone number for callback appointment\\n\\n## CRITICAL RULES\\n1. NEVER ask for something already provided — check collected data above carefully\\n2. NEVER ask for an email address — only phone number\\n3. DIMENSIONS: only accept Length x Width format. If customer says \\\"48m2\\\" respond: \\\"Super! Kunt u dit ook als lengte x breedte geven, bijv. 8x6 meter?\\\" Do not advance until valid LxW given.\\n4. PHOTOS: when customer sends image (has_attachment=true), acknowledge warmly: \\\"Geweldig, de foto's zijn ontvangen! Dan heb ik nog één vraag...\\\"\\n5. PRICE QUESTIONS: \\\"Voor een eerlijke prijs komen wij graag langs na ons gesprek. Dan kunnen wij u precies vertellen wat mogelijk is!\\\"\\n6. OFF-TOPIC questions: redirect warmly back to qualification\\n7. If customer gives multiple pieces of info at once — accept ALL of them, skip those steps, continue from next uncollected step\\n8. Vary your acknowledgment phrases — never repeat the same opener twice\\n9. IMPORTANT: The customer may send multiple messages in quick succession. Treat all NEW MESSAGES listed below as ONE combined response.\\n\\n## VALID DIMENSION FORMATS (accept these)\\n\\\"8x6\\\", \\\"8 bij 6\\\", \\\"8 meter bij 6 meter\\\", \\\"8x6 meter\\\", \\\"8 x 6 m\\\"\\nNormalize ALL to: \\\"8x6 meter\\\"\\n\\n## DECIDING WHETHER TO RESPOND\\nAnalyze the last outbound message (what the bot asked) and the latest inbound message(s) to decide if the customer seems finished responding or might still be typing more.\\n\\nSet \\\"respond\\\": false WHEN:\\n- The last outbound message asked a question, AND the latest inbound message(s) seem like an incomplete or partial answer — for example, a very short acknowledgment like \\\"ok\\\", \\\"yes\\\", \\\"moment\\\", \\\"one sec\\\", \\\"hold on\\\", or any message that does not actually answer what was asked yet.\\n\\nSet \\\"respond\\\": true WHEN:\\n- The inbound message(s) provide a clear, complete answer to what was last asked\\n- The customer asks a question back\\n- The customer provides any concrete information (address, wishes, dimensions, phone, photo)\\n- There is no clear outbound question to wait on\\n\\nWhen in doubt, set \\\"respond\\\": true — it is better to reply than to silently wait.\\n\\n## RESPOND WITH JSON ONLY — NO OTHER TEXT:\\n{\\n  \\\"messages\\\": [\\\"your single response message here\\\"],\\n  \\\"extracted\\\": {\\n    \\\"address\\\": \\\"extracted address or null\\\",\\n    \\\"wishes\\\": \\\"extracted wishes or null\\\",\\n    \\\"dimensions\\\": \\\"normalized LxW or null\\\",\\n    \\\"hasPhoto\\\": true or false,\\n    \\\"phone\\\": \\\"extracted phone or null\\\"\\n  },\\n  \\\"currentStep\\\": 1,\\n  \\\"qualificationComplete\\\": false,\\n  \\\"respond\\\": true\\n}",
-              "role": "system"
-            },
-            {
-              "content": "={{ $json.userMessage }}"
-            }
-          ]
-        },
-        "jsonOutput": true,
-        "options": {
-          "temperature": 0.7
-        }
+        "jsCode": "// Parse & Validate Anthropic AI Response\nconst convData = $node['Build OpenAI Message1'].json;\nlet aiOutput;\n\ntry {\n  // Get raw content from Anthropic node output\n  let rawContent = $input.first().json.content?.[0]?.text || '';\n\n  // Strip markdown code fences (```json ... ```)\n  if (typeof rawContent === 'string') {\n    rawContent = rawContent.replace(/```json\\n?|\\n?```/g, '').trim();\n  }\n\n  // Check if already an object or needs parsing\n  if (typeof rawContent === 'object' && rawContent !== null) {\n    aiOutput = rawContent;\n  } else {\n    aiOutput = JSON.parse(rawContent);\n  }\n\n  // Validate required structure\n  if (!aiOutput.messages || !Array.isArray(aiOutput.messages) || aiOutput.messages.length === 0) {\n    throw new Error('Missing or empty messages array');\n  }\n  if (typeof aiOutput.currentStep === 'undefined') {\n    aiOutput.currentStep = convData.qualification_step || 1;\n  }\n  if (typeof aiOutput.qualificationComplete === 'undefined') {\n    aiOutput.qualificationComplete = false;\n  }\n  if (!aiOutput.extracted) {\n    aiOutput.extracted = {};\n  }\n\n} catch (e) {\n  aiOutput = {\n    messages: ['Er is een fout opgetreden. Probeer het opnieuw.'],\n    extracted: {},\n    currentStep: convData.qualification_step || 1,\n    qualificationComplete: false,\n    respond: true\n  };\n}\n\nreturn [{\n  json: {\n    // AI response fields\n    ai_messages:            aiOutput.messages,\n    ai_reply:               aiOutput.messages[0],\n    respond:                aiOutput.respond ?? true,\n\n    // Extracted from this turn\n    extracted_address:      aiOutput.extracted.address    || null,\n    extracted_wishes:       aiOutput.extracted.wishes     || null,\n    extracted_dimensions:   aiOutput.extracted.dimensions || null,\n    extracted_hasPhoto:     aiOutput.extracted.hasPhoto   || false,\n    extracted_email:        aiOutput.extracted.email      || null,\n\n    // Step tracking\n    currentStep:            aiOutput.currentStep,\n    qualificationComplete:  aiOutput.qualificationComplete,\n\n    // Pass-through conversation context\n    conversation_id:        convData.conversation_id,\n    contact_id:             convData.contact_id,\n    whatsapp_chat_id:       convData.whatsapp_chat_id,\n    collected_address:      convData.collected_address,\n    collected_wishes:       convData.collected_wishes,\n    collected_dimensions:   convData.collected_dimensions,\n    collected_email:        convData.collected_email,\n    collected_photos:       convData.collected_photos\n  }\n}];"
       },
-      "id": "befab839-8260-49a1-b74a-e6199e4cd6fd",
-      "name": "OpenAI — Qualification Response",
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.8,
-      "position": [
-        -1968,
-        144
-      ],
-      "credentials": {
-        "openAiApi": {
-          "id": "XR9xujmItcOh3eRv",
-          "name": "OpenAi account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Parse & Validate AI Response\nconst convData = $node['Build OpenAI Message'].json;\nlet aiOutput;\ntry {\n  // Get raw content\n  let rawContent = $input.first().json.message?.content \n                || $input.first().json.choices?.[0]?.message?.content \n                || $input.first().json.text \n                || '';\n\n  // Check if already an object or needs parsing\n  if (typeof rawContent === 'object' && rawContent !== null) {\n    aiOutput = rawContent;\n  } else {\n    aiOutput = JSON.parse(rawContent);\n  }\n\n  // Validate required structure\n  if (!aiOutput.messages || !Array.isArray(aiOutput.messages) || aiOutput.messages.length === 0) {\n    throw new Error('Missing or empty messages array');\n  }\n  if (typeof aiOutput.currentStep === 'undefined') {\n    aiOutput.currentStep = convData.qualification_step || 1;\n  }\n  if (typeof aiOutput.qualificationComplete === 'undefined') {\n    aiOutput.qualificationComplete = false;\n  }\n  if (!aiOutput.extracted) {\n    aiOutput.extracted = {};\n  }\n} catch (e) {\n  aiOutput = {\n    messages: ['Er is een fout opgetreden. Probeer het opnieuw.'],\n    extracted: {},\n    currentStep: convData.qualification_step || 1,\n    qualificationComplete: false\n  };\n}\n\nreturn [{\n  json: {\n    ai_messages: aiOutput.messages,\n    ai_reply: aiOutput.messages[0],\n    extracted_address: aiOutput.extracted.address || null,\n    extracted_wishes: aiOutput.extracted.wishes || null,\n    extracted_dimensions: aiOutput.extracted.dimensions || null,\n    extracted_hasPhoto: aiOutput.extracted.hasPhoto || false,\n    extracted_phone: aiOutput.extracted.phone || null,\n    currentStep: aiOutput.currentStep,\n    qualificationComplete: aiOutput.qualificationComplete,\n    conversation_id: convData.conversation_id,\n    contact_id: convData.contact_id,\n    whatsapp_chat_id: convData.whatsapp_chat_id,\n    collected_address: convData.collected_address,\n    collected_wishes: convData.collected_wishes,\n    collected_dimensions: convData.collected_dimensions,\n    collected_phone: convData.collected_phone,\n    collected_photos: convData.collected_photos\n  }\n}];"
-      },
-      "id": "77677c82-662f-496b-9f32-dc2427167e1d",
-      "name": "Parse AI Response",
+      "id": "1e8c4618-85a0-49bd-8d48-74fd68b69fa8",
+      "name": "Parse AI Response1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1408,
-        144
+        -1472,
+        496
       ]
     },
     {
@@ -224,52 +351,48 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ collected_address: $json.extracted_address || $json.collected_address || null, collected_wishes: $json.extracted_wishes || $json.collected_wishes || null, collected_dimensions: $json.extracted_dimensions || $json.collected_dimensions || null, collected_phone: $json.extracted_phone || $json.collected_phone || null, qualification_step: $json.currentStep, qualification_complete: $json.qualificationComplete, pending_since: null, updated_at: new Date().toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ collected_address: $json.extracted_address || $json.collected_address || null, collected_wishes: $json.extracted_wishes || $json.collected_wishes || null, collected_dimensions: $json.extracted_dimensions || $json.collected_dimensions || null, collected_email: $json.extracted_email || $json.collected_email || null, qualification_step: $json.currentStep, qualification_complete: $json.qualificationComplete, pending_since: null, updated_at: new Date().toISOString() }) }}",
         "options": {}
       },
-      "id": "e324881f-6506-4cb7-904c-e90572ecaf4b",
-      "name": "Update Conversation State",
+      "id": "61de0bbf-11b1-4572-9d88-390b90c6a38e",
+      "name": "Update Conversation State1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1232,
-        144
+        -1248,
+        496
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Calculate Human-like Delay\nconst aiReply = $node['Parse AI Response'].json.ai_reply || '';\nconst messageLength = aiReply.length;\n\nlet delay = 2000 + (messageLength * 30) + (Math.random() * 2000);\ndelay = Math.min(delay, 10000);\ndelay = Math.max(delay, 1500);\n\nreturn [{\n  json: {\n    delay_ms: Math.floor(delay),\n    delay_seconds: Math.floor(delay / 1000),\n    message: aiReply,\n    conversation_id: $node['Parse AI Response'].json.conversation_id,\n    whatsapp_chat_id: $node['Parse AI Response'].json.whatsapp_chat_id,\n    qualificationComplete: $node['Parse AI Response'].json.qualificationComplete\n  }\n}];"
+        "jsCode": "// Calculate Human-like Delay\nconst aiReply = $node['Parse AI Response1'].json.ai_reply || '';\nconst messageLength = aiReply.length;\n\nlet delay = 2000 + (messageLength * 30) + (Math.random() * 2000);\ndelay = Math.min(delay, 10000);\ndelay = Math.max(delay, 1500);\n\nreturn [{\n  json: {\n    delay_ms: Math.floor(delay),\n    delay_seconds: Math.floor(delay / 1000),\n    message: aiReply,\n    conversation_id: $node['Parse AI Response1'].json.conversation_id,\n    whatsapp_chat_id: $node['Parse AI Response1'].json.whatsapp_chat_id,\n    qualificationComplete: $node['Parse AI Response1'].json.qualificationComplete\n  }\n}];"
       },
-      "id": "707119f9-1d58-4fe1-872d-48a8cf897d61",
-      "name": "Calculate Human Delay",
+      "id": "1a3d30e8-b308-4a5e-be4b-4bee8549a59c",
+      "name": "Calculate Human Delay1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1008,
-        144
+        -1024,
+        496
       ]
     },
     {
       "parameters": {
         "amount": "={{ $json.delay_seconds }}"
       },
-      "id": "7d4d6a7c-26af-4246-945e-0548f73abd71",
-      "name": "Wait — Human Delay",
+      "id": "7db16461-843f-455e-a86e-14508b056464",
+      "name": "Wait — Human Delay1",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        -784,
-        144
+        -800,
+        496
       ],
       "webhookId": "w1b-debounce-wait"
     },
@@ -290,18 +413,18 @@
           }
         }
       },
-      "id": "04155d76-005b-4291-975d-fa0019da64a4",
-      "name": "Send WhatsApp Reply via Unipile",
+      "id": "6425c238-c28e-40b9-833b-0e1dd558ab66",
+      "name": "Send WhatsApp Reply via Unipile1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -560,
-        144
+        -576,
+        496
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
+          "id": "KdDOYvWmsn0w3P5s",
+          "name": "Uniphile"
         }
       }
     },
@@ -322,24 +445,20 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ conversation_id: $node['Parse AI Response'].json.conversation_id, direction: 'outbound', content: $node['Parse AI Response'].json.ai_reply, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ conversation_id: $node['Parse AI Response1'].json.conversation_id, direction: 'outbound', content: $node['Parse AI Response1'].json.ai_reply, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
         "options": {}
       },
-      "id": "7ebc0ee4-001b-4b44-82ed-050ac64f4589",
-      "name": "Save Outbound Message",
+      "id": "d9fb987e-8bea-4827-b230-32beb1ab80e6",
+      "name": "Save Outbound Message1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -336,
-        144
+        -352,
+        496
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "ZP7lwUJ8A61vMFPL",
-          "name": "Header Auth account"
-        },
         "supabaseApi": {
-          "id": "Mu3plQ8MpRAvYJZM",
+          "id": "I1AKQYGeNizcWsiI",
           "name": "Supabase account"
         }
       }
@@ -356,7 +475,7 @@
           "conditions": [
             {
               "id": "condition-just-qualified-1b",
-              "leftValue": "={{ $node['Parse AI Response'].json.qualificationComplete }}",
+              "leftValue": "={{ $node['Parse AI Response1'].json.qualificationComplete }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -368,13 +487,13 @@
         },
         "options": {}
       },
-      "id": "7972bc2d-4eee-4056-89cd-94428aaeb7d9",
-      "name": "IF — Just Qualified?",
+      "id": "4155a2f4-a7bc-46f2-b6a7-4374a54f9d11",
+      "name": "IF — Just Qualified?1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -112,
-        144
+        -128,
+        496
       ]
     },
     {
@@ -383,7 +502,7 @@
         "url": "=https://niekbevisible.app.n8n.cloud/webhook/send-qualification-summary",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ conversationId: $node['Parse AI Response'].json.conversation_id }) }}",
+        "jsonBody": "={{ JSON.stringify({ conversationId: $node['Parse AI Response1'].json.conversation_id }) }}",
         "options": {
           "response": {
             "response": {
@@ -392,24 +511,24 @@
           }
         }
       },
-      "id": "39cd4f75-3c02-4de3-9e51-8f417cc55027",
-      "name": "Trigger Workflow 3 — Send Summary",
+      "id": "6cd526ea-50be-4fcb-a192-db297362d313",
+      "name": "Trigger Workflow 3 — Send Summary1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        112,
-        32
+        96,
+        400
       ]
     },
     {
       "parameters": {},
-      "id": "04101867-b021-4fe6-906c-205f1fd7e880",
-      "name": "No Operation — End",
+      "id": "2722843a-b3a4-4da9-83fc-db6fc0c2a48a",
+      "name": "No Operation — End1",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        112,
-        240
+        96,
+        592
       ]
     },
     {
@@ -424,7 +543,7 @@
           "conditions": [
             {
               "id": "5a62a98c-65d4-4080-87cd-60721115ade0",
-              "leftValue": "={{ $json.message.content.respond }}",
+              "leftValue": "={{ $json.respond }}",
               "rightValue": false,
               "operator": {
                 "type": "boolean",
@@ -440,170 +559,279 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1616,
-        144
+        -1696,
+        496
       ],
-      "id": "9147e34f-b7b1-4e16-bea6-ffd7a704931f",
-      "name": "If"
+      "id": "379059f0-2a88-4370-b5d6-a84a4bee6834",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-opus-4-5-20251101",
+          "mode": "list",
+          "cachedResultName": "claude-opus-4-5-20251101"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.userMessage }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "system": "=You are a friendly customer service assistant for a professional landscaping and gardening company. Your job is to qualify potential customers by collecting 5 specific pieces of information in strict order. After qualification is complete, you switch to a friendly general chatbot mode.  ## YOUR PERSONALITY - Warm, professional, enthusiastic about garden projects - Natural, conversational — never robotic - Each response STARTS with a brief varied acknowledgment of what the customer said - Keep responses SHORT: maximum 2-3 sentences  ## LANGUAGE RULES — READ THIS FIRST BEFORE EVERY RESPONSE - Detect the language of the customer's FIRST message in this conversation and lock it in for the entire conversation - If the first message is in Dutch → respond in Dutch for every single message, no exceptions - If the first message is in English → respond in English for every single message, no exceptions - If the first message is ambiguous (e.g. \"hi\", \"hello\", \"hoi\") → default to English - NEVER switch language mid-conversation, even if the customer switches language - NEVER mix languages in a single response — every word must be in the locked language - The fixed Dutch responses in these instructions (e.g. photo acknowledgment, price response) must be translated to English if the conversation is in English, and kept in Dutch if the conversation is in Dutch - The language of the customer's latest message does NOT change your language — only the first message determines the language for the whole conversation  ## STRICT QUALIFICATION STEPS — COLLECT IN THIS ORDER ONLY Step 1: ADDRESS — Ask for the property address Step 2: WISHES — Ask what they want done to their garden/property Step 3: DIMENSIONS — Ask for dimensions as LENGTH x WIDTH in meters (e.g. \"8x6 meter\") Step 4: PHOTOS — Ask them to send photos of the current situation Step 5: EMAIL — Ask for their email address. Frame it as: \"Can you also share your email address? Then we have all the data to make you a quote/offer.\"  ## POST-QUALIFICATION MODE When the COLLECTED DATA shows \"Qualification complete: YES\", ALL 5 steps have already been collected. Switch to friendly general conversation mode: - Be warm, helpful, and conversational — you are now a friendly assistant - NEVER discuss pricing, costs, quotes, estimates, or rates - NEVER discuss scheduling, planning, timelines, or appointment dates - If the customer asks about price or planning, explain warmly that a colleague will discuss all of this during the phone call appointment that has been scheduled - You CAN answer general gardening questions, chat casually, or help with any other general queries - Keep responses short and friendly (1-2 sentences) - Do NOT re-ask for any information — everything has already been collected - In the JSON output, always set qualificationComplete to true and currentStep to 6 - Still output the same JSON format with extracted values as null  ## CRITICAL RULES 1. NEVER ask for something already provided — check collected data above carefully 2. NEVER ask for a phone number — the phone is already known from WhatsApp 3. DIMENSIONS: only accept Length x Width format. If customer says \"48m2\" respond in their locked language asking for L×W format. Do not advance until valid LxW given. 4. PHOTOS: when customer sends image (has_attachment=true), acknowledge warmly in the locked language. 5. PHOTOS REFUSAL: If the customer says they don't want to send photos, can't send photos, or wants to skip them — do NOT accept this and do NOT move on. First explain why photos are needed, then ask again. Use this structure: acknowledge their hesitation warmly → explain that photos help us make an accurate estimate of the work needed → ask once more. Example (English): \"No worries at all! The reason we ask for photos is so our team can make an accurate estimate of the work needed — without them it's really hard for us to give you a fair quote. Could you perhaps take a quick snap with your phone?\" Example (Dutch): \"Geen probleem! De reden dat we foto's vragen is zodat we een nauwkeurige schatting kunnen maken van het werk — zonder foto's is het lastig om een eerlijke offerte te geven. Zou u misschien even een foto kunnen maken met uw telefoon?\" Only advance to Step 5 when has_attachment=true. 6. PRICE QUESTIONS: respond in the locked language explaining you will provide a fair price after visiting in person. 7. OFF-TOPIC questions: redirect warmly back to qualification in the locked language (unless qualification is already complete — then answer freely) 8. If customer gives multiple pieces of info at once — accept ALL of them, skip those steps, continue from next uncollected step 9. Vary your acknowledgment phrases — never repeat the same opener twice 10. IMPORTANT: The customer may send multiple messages in quick succession. Treat all NEW MESSAGES listed below as ONE combined response.  ## VALID DIMENSION FORMATS (accept these) \"8x6\", \"8 bij 6\", \"8 meter bij 6 meter\", \"8x6 meter\", \"8 x 6 m\" Normalize ALL to: \"8x6 meter\"  ## DECIDING WHETHER TO RESPOND Analyze the last outbound message (what the bot asked) and the latest inbound message(s) to decide if the customer seems finished responding or might still be typing more.  Set \"respond\": false WHEN: - The last outbound message asked a question, AND the latest inbound message(s) seem like an incomplete or partial answer — for example, a very short acknowledgment like \"ok\", \"yes\", \"moment\", \"one sec\", \"hold on\", or any message that does not actually answer what was asked yet.  Set \"respond\": true WHEN: - The inbound message(s) provide a clear, complete answer to what was last asked - The customer asks a question back - The customer provides any concrete information (address, wishes, dimensions, phone, photo) - There is no clear outbound question to wait on  When in doubt, set \"respond\": true — it is better to reply than to silently wait.  ## RESPOND WITH JSON ONLY — NO OTHER TEXT: {   \"messages\": [\"your single response message here\"],   \"extracted\": {     \"address\": \"extracted address or null\",     \"wishes\": \"extracted wishes or null\",     \"dimensions\": \"normalized LxW or null\",     \"hasPhoto\": true or false,     \"email\": \"extracted email or null\"   },   \"currentStep\": 1,   \"qualificationComplete\": false,   \"respond\": true }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        -2272,
+        496
+      ],
+      "id": "45c0c771-c2cc-41b5-af9d-20af16ea2cbd",
+      "name": "Message a model1",
+      "credentials": {
+        "anthropicApi": {
+          "id": "Uxj5WgLtWNZRaMuE",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const rawText = item.json.content[0].text;\n\n  // Strip markdown code fences (```json ... ```)\n  const cleaned = rawText.replace(/```json\\n?|\\n?```/g, \"\").trim();\n\n  // Parse the JSON string\n  const parsed = JSON.parse(cleaned);\n\n  // Extract the respond status\n  item.json.respond = parsed.respond;\n\n  // Optional: extract other fields too\n  item.json.messages        = parsed.messages;\n  item.json.currentStep     = parsed.currentStep;\n  item.json.qualificationComplete = parsed.qualificationComplete;\n  item.json.extracted       = parsed.extracted;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        496
+      ],
+      "id": "647614ea-38a0-48fe-8f63-73fd3b1ea177",
+      "name": "Code in JavaScript1"
     }
   ],
-  "pinData": {},
   "connections": {
-    "Schedule Trigger — Every 15s": {
+    "IF — Reset Requested": {
       "main": [
         [
           {
-            "node": "Find Pending Conversations",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Find Pending Conversations": {
-      "main": [
-        [
-          {
-            "node": "Filter — Ready to Process",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter — Ready to Process": {
-      "main": [
-        [
-          {
-            "node": "Get Message History",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Message History": {
-      "main": [
-        [
-          {
-            "node": "Build OpenAI Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build OpenAI Message": {
-      "main": [
-        [
-          {
-            "node": "OpenAI — Qualification Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI — Qualification Response": {
-      "main": [
-        [
-          {
-            "node": "If",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse AI Response": {
-      "main": [
-        [
-          {
-            "node": "Update Conversation State",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Conversation State": {
-      "main": [
-        [
-          {
-            "node": "Calculate Human Delay",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Calculate Human Delay": {
-      "main": [
-        [
-          {
-            "node": "Wait — Human Delay",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait — Human Delay": {
-      "main": [
-        [
-          {
-            "node": "Send WhatsApp Reply via Unipile",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Send WhatsApp Reply via Unipile": {
-      "main": [
-        [
-          {
-            "node": "Save Outbound Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Save Outbound Message": {
-      "main": [
-        [
-          {
-            "node": "IF — Just Qualified?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF — Just Qualified?": {
-      "main": [
-        [
-          {
-            "node": "Trigger Workflow 3 — Send Summary",
+            "node": "Delete Messages",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "No Operation — End",
+            "node": "Message a model1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If": {
+    "Delete Messages": {
       "main": [
         [
           {
-            "node": "Parse AI Response",
+            "node": "Delete Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Conversation": {
+      "main": [
+        [
+          {
+            "node": "Delete Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Contact": {
+      "main": [
+        [
+          {
+            "node": "Send Reset Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger — Every 15s1": {
+      "main": [
+        [
+          {
+            "node": "Find Pending Conversations1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Pending Conversations1": {
+      "main": [
+        [
+          {
+            "node": "Filter — Ready to Process1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter — Ready to Process1": {
+      "main": [
+        [
+          {
+            "node": "Get Message History1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Message History1": {
+      "main": [
+        [
+          {
+            "node": "Build OpenAI Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build OpenAI Message1": {
+      "main": [
+        [
+          {
+            "node": "IF — Reset Requested",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response1": {
+      "main": [
+        [
+          {
+            "node": "Update Conversation State1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Conversation State1": {
+      "main": [
+        [
+          {
+            "node": "Calculate Human Delay1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Human Delay1": {
+      "main": [
+        [
+          {
+            "node": "Wait — Human Delay1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait — Human Delay1": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply via Unipile1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Reply via Unipile1": {
+      "main": [
+        [
+          {
+            "node": "Save Outbound Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Outbound Message1": {
+      "main": [
+        [
+          {
+            "node": "IF — Just Qualified?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Just Qualified?1": {
+      "main": [
+        [
+          {
+            "node": "Trigger Workflow 3 — Send Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation — End1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If1",
             "type": "main",
             "index": 0
           }
@@ -611,21 +839,9 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "46a1e3a4-61dc-439a-95e6-518dc3ae8624",
+  "pinData": {},
   "meta": {
-    "instanceId": "280a1950d3062d1ee5011d8dc582c428d297888da331d4d57d58faa86aaa35bf"
-  },
-  "id": "N2DdCN07UKKntE6v",
-  "tags": [
-    {
-      "createdAt": "2026-02-18T09:24:09.681Z",
-      "updatedAt": "2026-02-18T09:24:09.681Z",
-      "id": "wDacDrDTEPSclVrT",
-      "name": "Chattie"
-    }
-  ]
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a6103a2320145fe974541bf1a458566a4cb3c085416cbbe1576bf2fa5e798d37"
+  }
 }

@@ -144,7 +144,7 @@ async function DashboardContent() {
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="text-left py-3 px-2 font-medium text-gray-500">Naam</th>
-                    <th className="text-left py-3 px-2 font-medium text-gray-500">Telefoon</th>
+                    <th className="text-left py-3 px-2 font-medium text-gray-500">E-mail</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-500 hidden sm:table-cell">Adres</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-500 hidden md:table-cell">Afmetingen</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-500 hidden lg:table-cell">Tijd</th>
@@ -167,12 +167,9 @@ async function DashboardContent() {
                           </Link>
                         </td>
                         <td className="py-3 px-2">
-                          <a
-                            href={`tel:${lead.collected_phone || contact?.phone || ''}`}
-                            className="text-green-600 hover:text-green-700 font-medium"
-                          >
-                            {lead.collected_phone || contact?.phone || '-'}
-                          </a>
+                          <span className="text-green-600 font-medium">
+                            {lead.collected_email || '-'}
+                          </span>
                         </td>
                         <td className="py-3 px-2 text-gray-600 hidden sm:table-cell max-w-[200px] truncate">
                           {lead.collected_address || '-'}
