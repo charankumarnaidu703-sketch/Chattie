@@ -19,7 +19,7 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_12px_32px_-4px_rgba(11,28,48,0.1)] border border-outline-variant/10 flex justify-around items-center py-2 px-1">
-        {navItems.slice(0, 3).map((item) => {
+        {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
