@@ -29,14 +29,13 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 active:scale-90 min-h-[48px]',
+                'flex items-center justify-center px-4 py-2.5 rounded-xl transition-all duration-200 active:scale-90',
                 isActive
                   ? 'text-primary bg-surface-container-low/50'
                   : 'text-outline hover:text-on-surface-variant'
               )}
             >
-              <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
-              <span className="font-label font-bold text-[10px] uppercase tracking-wider">{item.label}</span>
+              <Icon className={cn('h-6 w-6', isActive && 'stroke-[2.5]')} />
             </Link>
           );
         })}
