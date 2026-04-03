@@ -2,18 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Building2, Save, Loader2, Check } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
-type KnowledgeRow = {
-  id: string;
-  category: string;
-  key: string;
-  value: string;
-};
+type KnowledgeRow = { id: string; category: string; key: string; value: string };
 
 type SectionConfig = {
   category: string;
@@ -75,7 +66,6 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize form state from database rows
   useEffect(() => {
     const grouped: Record<string, Record<string, string>> = {};
     for (const row of initialData) {
@@ -90,10 +80,7 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
   }, [data]);
 
   const setValue = (category: string, key: string, value: string) => {
-    setData((prev) => ({
-      ...prev,
-      [category]: { ...prev[category], [key]: value },
-    }));
+    setData((prev) => ({ ...prev, [category]: { ...prev[category], [key]: value } }));
   };
 
   const saveSection = async (section: SectionConfig) => {
@@ -102,7 +89,6 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
     try {
       for (const field of section.fields) {
         const value = getValue(section.category, field.key);
-        // Check if row exists
         const { data: existing, error: selectError } = await supabase
           .from('company_knowledge')
           .select('id')
@@ -110,22 +96,14 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
           .eq('key', field.key)
           .maybeSingle();
 
-        if (selectError) {
-          setError(`Fout: ${selectError.message}. Heb je de SQL migratie al uitgevoerd?`);
-          return;
-        }
+        if (selectError) { setError(`Fout: ${selectError.message}`); return; }
 
         if (existing) {
-          const { error: updateError } = await supabase
-            .from('company_knowledge')
-            .update({ value })
-            .eq('id', existing.id);
-          if (updateError) { setError(`Opslaan mislukt: ${updateError.message}`); return; }
+          const { error: e } = await supabase.from('company_knowledge').update({ value }).eq('id', existing.id);
+          if (e) { setError(`Opslaan mislukt: ${e.message}`); return; }
         } else {
-          const { error: insertError } = await supabase
-            .from('company_knowledge')
-            .insert({ category: section.category, key: field.key, value });
-          if (insertError) { setError(`Opslaan mislukt: ${insertError.message}`); return; }
+          const { error: e } = await supabase.from('company_knowledge').insert({ category: section.category, key: field.key, value });
+          if (e) { setError(`Opslaan mislukt: ${e.message}`); return; }
         }
       }
       setSaved(section.category);
@@ -141,69 +119,74 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Building2 className="h-6 w-6 text-green-500" />
+        <h1 className="font-headline font-extrabold text-2xl tracking-tight text-on-background flex items-center gap-2">
+          <Building2 className="h-6 w-6 text-primary" />
           Bedrijfsinformatie
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="font-label text-xs text-outline mt-1">
           Deze informatie wordt gebruikt door de AI voor e-mail concepten en klantgesprekken.
         </p>
       </div>
 
-      {/* Error banner */}
+      <div className="bg-surface-container-low h-[1px] w-full" />
+
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+        <div className="bg-error-container/30 border-l-4 border-error p-4 rounded-xl text-sm text-on-error-container">
           <strong>⚠️ Fout:</strong> {error}
         </div>
       )}
 
-      {/* Sections */}
       {SECTIONS.map((section) => (
-        <Card key={section.category}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <span>{section.icon}</span>
-              {section.title}
-            </CardTitle>
-            <Button
-              size="sm"
+        <div
+          key={section.category}
+          className="bg-surface-container-lowest p-6 rounded-[1.5rem] shadow-ambient"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-headline font-bold text-lg text-on-background flex items-center gap-2">
+              <span>{section.icon}</span> {section.title}
+            </h2>
+            <button
               onClick={() => saveSection(section)}
               disabled={saving === section.category}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-primary hover:bg-primary-container text-on-primary text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
             >
               {saving === section.category ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Opslaan...</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Opslaan...</>
               ) : saved === section.category ? (
-                <><Check className="h-4 w-4 mr-1" /> Opgeslagen!</>
+                <><Check className="h-3.5 w-3.5" /> Opgeslagen!</>
               ) : (
-                <><Save className="h-4 w-4 mr-1" /> Opslaan</>
+                <><Save className="h-3.5 w-3.5" /> Opslaan</>
               )}
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            </button>
+          </div>
+
+          <div className="space-y-4">
             {section.fields.map((field) => (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
                   {field.label}
                 </label>
                 {field.type === 'input' ? (
-                  <Input
+                  <input
+                    type="text"
                     value={getValue(section.category, field.key)}
                     onChange={(e) => setValue(section.category, field.key, e.target.value)}
                     placeholder={field.placeholder}
+                    className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 ) : (
-                  <Textarea
+                  <textarea
                     value={getValue(section.category, field.key)}
                     onChange={(e) => setValue(section.category, field.key, e.target.value)}
                     placeholder={field.placeholder}
                     rows={4}
+                    className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                   />
                 )}
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   );

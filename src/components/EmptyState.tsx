@@ -1,28 +1,18 @@
-import { type LucideIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
-  icon: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   message: string;
   subMessage?: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  className?: string;
 }
 
-export function EmptyState({ icon: Icon, message, subMessage, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({ message, subMessage, className }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="rounded-full bg-gray-100 p-4 mb-4">
-        <Icon className="h-8 w-8 text-gray-400" />
-      </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-1">{message}</h3>
+    <div className={cn('flex flex-col items-center justify-center py-12 px-4', className)}>
+      <p className="font-headline font-semibold text-on-surface-variant text-center">{message}</p>
       {subMessage && (
-        <p className="text-sm text-gray-500 max-w-sm">{subMessage}</p>
-      )}
-      {actionLabel && onAction && (
-        <Button onClick={onAction} variant="outline" className="mt-4">
-          {actionLabel}
-        </Button>
+        <p className="text-sm text-outline text-center mt-2 max-w-xs leading-relaxed">{subMessage}</p>
       )}
     </div>
   );

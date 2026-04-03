@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, MessageSquare, Filter } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ConversationCard } from '@/components/ConversationCard';
+import Link from 'next/link';
+import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
+import { nl } from 'date-fns/locale';
+import { Search } from 'lucide-react';
+import { StatusBadge, StatusDot } from '@/components/StatusBadge';
+import { QualificationProgress } from '@/components/QualificationProgress';
 import { EmptyState } from '@/components/EmptyState';
 import type { ConversationWithContact, Message } from '@/lib/types';
 
@@ -16,14 +18,42 @@ interface ConversationsListClientProps {
   conversations: ConversationWithMessages[];
 }
 
+function getTimeLabel(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isToday(d)) return format(d, 'HH:mm');
+  if (isYesterday(d)) return 'Gisteren';
+  return formatDistanceToNow(d, { locale: nl, addSuffix: false });
+}
+
+function getConversationStatus(c: ConversationWithContact): string {
+  if (c.qualification_complete) return 'qualified';
+  if (c.bot_paused) return 'paused';
+  return 'active';
+}
+
+function getStatusColor(status: string): 'primary' | 'secondary' | 'tertiary' {
+  switch (status) {
+    case 'active': return 'primary';
+    case 'paused': return 'secondary';
+    case 'qualified': return 'tertiary';
+    default: return 'primary';
+  }
+}
+
+const TABS = [
+  { key: 'alle', label: 'Alle' },
+  { key: 'actief', label: 'Actief' },
+  { key: 'gepauzeerd', label: 'Gepauzeerd' },
+  { key: 'volledig', label: 'Volledig' },
+];
+
 export function ConversationsListClient({ conversations }: ConversationsListClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('alle');
+  const [showSearch, setShowSearch] = useState(false);
 
   const filtered = useMemo(() => {
     let result = conversations;
-
-    // Filter by tab
     switch (activeTab) {
       case 'actief':
         result = result.filter((c) => c.status === 'active' && !c.bot_paused);
@@ -31,93 +61,129 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
       case 'gepauzeerd':
         result = result.filter((c) => c.bot_paused);
         break;
-      case 'gekwalificeerd':
+      case 'volledig':
         result = result.filter((c) => c.qualification_complete);
         break;
     }
-
-    // Filter by search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((c) => {
         const name = c.contacts?.name?.toLowerCase() ?? '';
         const phone = c.contacts?.phone?.toLowerCase() ?? '';
-        const address = c.collected_address?.toLowerCase() ?? '';
-        return name.includes(q) || phone.includes(q) || address.includes(q);
+        return name.includes(q) || phone.includes(q);
       });
     }
-
     return result;
   }, [conversations, activeTab, searchQuery]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-green-500" />
-            Gesprekken
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {conversations.length} totaal
-          </p>
-        </div>
-      </div>
+      <header className="flex justify-between items-center">
+        <h1 className="font-headline font-bold text-2xl tracking-tight text-primary">
+          Gesprekken
+        </h1>
+        <button
+          onClick={() => setShowSearch((s) => !s)}
+          className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
+        >
+          <Search className="h-5 w-5 text-primary" />
+        </button>
+      </header>
+
+      {/* Tonal Separation */}
+      <div className="bg-surface-container-low h-[1px] w-full" />
 
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Zoek op naam, telefoon of adres..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {showSearch && (
+        <div className="animate-slide-in">
+          <input
+            type="text"
+            placeholder="Zoek op naam of telefoonnummer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20"
+            autoFocus
+          />
+        </div>
+      )}
 
       {/* Filter Tabs */}
-      <Tabs defaultValue="alle" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full sm:w-auto overflow-x-auto">
-          <TabsTrigger value="alle">
-            <Filter className="h-3.5 w-3.5 mr-1.5" />
-            Alle ({conversations.length})
-          </TabsTrigger>
-          <TabsTrigger value="actief">
-            🟢 Actief ({conversations.filter((c) => c.status === 'active' && !c.bot_paused).length})
-          </TabsTrigger>
-          <TabsTrigger value="gepauzeerd">
-            🟠 Gepauzeerd ({conversations.filter((c) => c.bot_paused).length})
-          </TabsTrigger>
-          <TabsTrigger value="gekwalificeerd">
-            ✅ Gekwalificeerd ({conversations.filter((c) => c.qualification_complete).length})
-          </TabsTrigger>
-        </TabsList>
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 ${
+              activeTab === tab.key
+                ? 'bg-primary text-on-primary'
+                : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value={activeTab}>
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon={MessageSquare}
-              message={
-                searchQuery
-                  ? 'Geen resultaten gevonden'
-                  : 'Geen gesprekken in deze categorie'
-              }
-              subMessage={
-                searchQuery
-                  ? `Geen gesprekken gevonden voor "${searchQuery}"`
-                  : 'Zodra klanten via WhatsApp berichten sturen, verschijnen ze hier.'
-              }
-            />
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((conversation) => (
-                <ConversationCard key={conversation.id} conversation={conversation} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Conversation Cards */}
+      {filtered.length === 0 ? (
+        <EmptyState
+          message={searchQuery ? 'Geen resultaten gevonden' : 'Geen gesprekken in deze categorie'}
+          subMessage={
+            searchQuery
+              ? `Geen gesprekken gevonden voor "${searchQuery}"`
+              : 'Zodra klanten via WhatsApp berichten sturen, verschijnen ze hier.'
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((conv) => {
+            const contact = conv.contacts;
+            const status = getConversationStatus(conv);
+            const lastMessage = conv.messages?.[0];
+            const step = conv.qualification_step || 1;
+
+            return (
+              <Link key={conv.id} href={`/conversations/${conv.id}`} className="block">
+                <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 active:scale-[0.98] transition-transform">
+                  {/* Name + Time */}
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-3">
+                      <StatusDot status={status} />
+                      <span className="font-headline font-bold text-on-background">
+                        {contact?.name || contact?.phone || 'Onbekend'}
+                      </span>
+                    </div>
+                    <span className="font-label text-on-surface-variant text-xs">
+                      {getTimeLabel(conv.updated_at)}
+                    </span>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <StatusBadge status={status} />
+                  </div>
+
+                  {/* Step Progress */}
+                  <div className="mb-4">
+                    <QualificationProgress
+                      currentStep={step}
+                      color={getStatusColor(status)}
+                    />
+                  </div>
+
+                  {/* Last Message Preview */}
+                  {lastMessage?.content && (
+                    <p className="text-on-surface-variant/80 text-sm truncate font-body leading-relaxed">
+                      {lastMessage.content}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
-import { QualificationProgress } from '@/components/QualificationProgress';
+import { QualificationProgressBar } from '@/components/QualificationProgress';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { getSupabaseClient } from '@/lib/supabase/client';
@@ -255,74 +255,57 @@ export function ConversationView({
   return (
     <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-[calc(100dvh-3rem)]">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2.5 md:gap-3 md:px-4 md:py-3 bg-white border-b border-gray-200 rounded-t-xl flex-shrink-0">
-        <Link href="/conversations" className="md:hidden flex-shrink-0">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-
-        <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
-          <span className="text-green-700 font-semibold text-xs md:text-sm">
-            {displayName.substring(0, 2).toUpperCase()}
-          </span>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h2 className="font-semibold text-gray-900 text-sm truncate">{displayName}</h2>
-          <div className="flex items-center gap-1.5">
-            <StatusBadge status={conversation.bot_paused ? 'paused' : conversation.status} />
-            {contact?.phone && (
-              <span className="text-xs text-gray-400 hidden sm:inline">{contact.phone}</span>
-            )}
+      <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex-shrink-0">
+        <div className="flex justify-between items-center w-full px-4 py-3 border-b border-outline-variant/10">
+          <div className="flex items-center gap-3">
+            <Link href="/conversations" className="p-2 -ml-2 hover:bg-surface-container-low rounded-full transition-colors active:scale-95">
+              <ArrowLeft className="h-5 w-5 text-primary" />
+            </Link>
+            <div className="flex flex-col">
+              <h1 className="font-headline font-bold text-lg text-on-background tracking-tight">{displayName}</h1>
+              <span className="font-label text-[11px] text-on-surface-variant font-medium tracking-widest">{contact?.phone || ''}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleBot}
+              disabled={isTogglingBot}
+              className={`px-3 py-1.5 rounded-xl flex items-center gap-2 font-label text-xs font-bold uppercase tracking-wider active:scale-95 transition-all border ${
+                conversation.bot_paused
+                  ? 'bg-primary/10 border-primary text-primary'
+                  : 'bg-secondary-container/10 border-secondary-container text-secondary'
+              }`}
+            >
+              {isTogglingBot ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : conversation.bot_paused ? (
+                <><Play className="h-4 w-4" /> Hervat</>
+              ) : (
+                <><Pause className="h-4 w-4" /> Pauze</>
+              )}
+            </button>
+            <button
+              className="md:hidden p-2 hover:bg-surface-container-low rounded-full transition-colors"
+              onClick={() => setInfoSheetOpen(true)}
+            >
+              <Info className="h-5 w-5 text-on-surface-variant" />
+            </button>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <Button
-            variant={conversation.bot_paused ? 'default' : 'warning'}
-            size="sm"
-            onClick={handleToggleBot}
-            disabled={isTogglingBot}
-            className="min-h-[40px] md:min-h-[44px] text-xs md:text-sm px-2.5 md:px-3"
-          >
-            {isTogglingBot ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : conversation.bot_paused ? (
-              <>
-                <Play className="h-4 w-4" />
-                <span className="hidden sm:inline">Hervatten</span>
-              </>
-            ) : (
-              <>
-                <Pause className="h-4 w-4" />
-                <span className="hidden sm:inline">Pauzeren</span>
-              </>
-            )}
-          </Button>
+        {/* Bot paused alert banner */}
+        {conversation.bot_paused && (
+          <div className="bg-secondary/5 border-b border-secondary/10 px-4 py-2.5 flex items-center gap-3">
+            <Pause className="h-4 w-4 text-secondary flex-shrink-0" />
+            <p className="font-label text-[12px] font-semibold text-secondary">Bot gepauzeerd — u beheert dit gesprek</p>
+          </div>
+        )}
 
-          {/* Mobile: info panel toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden h-9 w-9"
-            onClick={() => setInfoSheetOpen(true)}
-          >
-            <Info className="h-5 w-5" />
-          </Button>
+        {/* Qualification Progress Panel */}
+        <div className="bg-surface-container-low px-4 py-3">
+          <QualificationProgressBar currentStep={conversation.qualification_step || 1} />
         </div>
-      </div>
-
-      {/* Bot paused banner */}
-      {conversation.bot_paused && (
-        <div className="bg-orange-50 border-b border-orange-200 px-4 py-2 flex items-center gap-2">
-          <Pause className="h-4 w-4 text-orange-500 flex-shrink-0" />
-          <p className="text-sm text-orange-700">
-            Bot gepauzeerd — u beheert dit gesprek handmatig
-          </p>
-        </div>
-      )}
+      </header>
 
       {/* Main content area */}
       <div className="flex flex-1 overflow-hidden">
@@ -331,10 +314,10 @@ export function ConversationView({
           {/* Messages */}
           <div
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto px-3 py-3 md:px-4 md:py-4 space-y-1 bg-gray-50"
+            className="flex-1 overflow-y-auto px-4 py-6 space-y-2 bg-surface"
           >
             {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-full text-outline text-sm font-body">
                 Nog geen berichten in dit gesprek
               </div>
             ) : (
@@ -349,48 +332,45 @@ export function ConversationView({
           {showScrollButton && (
             <button
               onClick={() => scrollToBottom()}
-              className="absolute bottom-20 right-4 md:bottom-8 md:right-8 h-10 w-10 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+              className="absolute bottom-20 right-4 md:bottom-8 md:right-8 h-10 w-10 rounded-full bg-surface-container-lowest shadow-ambient flex items-center justify-center hover:bg-surface-container-low transition-colors z-10"
             >
-              <ChevronDown className="h-5 w-5 text-gray-500" />
+              <ChevronDown className="h-5 w-5 text-on-surface-variant" />
             </button>
           )}
 
-          {/* Message input (only when bot paused) */}
+          {/* Message input */}
           {conversation.bot_paused && (
-            <div className="p-2.5 md:p-3 bg-white border-t border-gray-200 safe-area-bottom">
-              <div className="flex gap-2 items-end">
-                <Textarea
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type uw bericht..."
-                  className="min-h-[44px] max-h-32 resize-none text-base md:text-sm"
-                  rows={1}
-                  disabled={isSending}
-                />
-                <Button
+            <div className="p-4 bg-surface border-t border-outline-variant/10 safe-area-bottom">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-surface-container-highest rounded-2xl flex items-center px-4 py-3">
+                  <input
+                    type="text"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Typ uw bericht..."
+                    className="bg-transparent border-none focus:ring-0 focus:outline-none text-sm flex-1 font-medium text-on-background placeholder:text-on-surface-variant/50"
+                    disabled={isSending}
+                  />
+                </div>
+                <button
                   onClick={handleSendMessage}
                   disabled={!messageText.trim() || isSending}
-                  className="h-[44px] px-4 flex-shrink-0"
+                  className="w-12 h-12 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform disabled:opacity-50"
                 >
                   {isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <Send className="h-4 w-4" />
+                    <Send className="h-5 w-5" />
                   )}
-                </Button>
+                </button>
               </div>
-              {messageText.length > 200 && (
-                <p className="text-xs text-gray-400 mt-1 text-right">
-                  {messageText.length} tekens
-                </p>
-              )}
             </div>
           )}
         </div>
 
         {/* RIGHT: Info panel (desktop only) */}
-        <div className="hidden md:block w-80 lg:w-96 border-l border-gray-200 bg-white overflow-y-auto">
+        <div className="hidden md:block w-80 lg:w-96 bg-surface-container-low overflow-y-auto">
           <InfoPanel conversation={conversation} contact={contact} />
         </div>
       </div>
@@ -442,45 +422,34 @@ function MessageBubble({ message }: { message: Message }) {
   const mediaUrls = rawMediaUrls.map(getDirectImageUrl);
 
   return (
-    <div
-      className={`flex ${isInbound ? 'justify-start' : 'justify-end'} mb-1 animate-slide-in`}
-    >
+    <div className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'} gap-1 mb-2 animate-slide-in`}>
+      {isManual && (
+        <span className="font-label text-[9px] font-bold text-tertiary uppercase tracking-widest mr-1">Handmatig</span>
+      )}
       <div
         className={`
-          max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-sm
-          ${isInbound ? 'bg-white text-gray-900 rounded-tl-sm border border-gray-100' : ''}
-          ${!isInbound && !isManual ? 'bg-green-600 text-white rounded-tr-sm' : ''}
-          ${isManual ? 'bg-blue-600 text-white rounded-tr-sm' : ''}
+          max-w-[85%] p-4 rounded-2xl text-[15px] leading-relaxed shadow-sm
+          ${isInbound ? 'bg-surface-container-lowest border border-outline-variant/20 rounded-tl-none text-on-background' : ''}
+          ${!isInbound && !isManual ? 'bg-primary text-on-primary rounded-tr-none' : ''}
+          ${isManual ? 'bg-tertiary text-on-tertiary rounded-tr-none shadow-md' : ''}
         `}
       >
-        {isManual && (
-          <span className="text-[10px] text-blue-200 block mb-0.5 font-medium">
-            Handmatig verstuurd
-          </span>
-        )}
-        {/* Render "View Photos" button for attachments */}
         {message.type === 'image' && mediaUrls.length > 0 && (
           <>
             <div
               onClick={() => setGalleryOpen(true)}
               className="flex items-center gap-2 mb-1.5 p-2.5 rounded-lg bg-black/5 hover:bg-black/10 transition-colors cursor-pointer select-none"
             >
-              <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full">
+              <div className="bg-tertiary-fixed text-tertiary p-1.5 rounded-full">
                 <ImageIcon className="h-4 w-4" />
               </div>
               <span className="text-sm font-medium">
                 {mediaUrls.length === 1 ? 'Bekijk foto' : `Bekijk ${mediaUrls.length} foto's`}
               </span>
             </div>
-            {/* Embedded Gallery Modal for this message */}
-            <PhotoGalleryModal
-              photos={mediaUrls}
-              open={galleryOpen}
-              onOpenChange={setGalleryOpen}
-            />
+            <PhotoGalleryModal photos={mediaUrls} open={galleryOpen} onOpenChange={setGalleryOpen} />
           </>
         )}
-        {/* Fallback: show text label when image has no URL */}
         {message.type === 'image' && mediaUrls.length === 0 && (
           <div className="flex items-center gap-1.5 mb-1">
             <Camera className="h-3.5 w-3.5" />
@@ -490,13 +459,10 @@ function MessageBubble({ message }: { message: Message }) {
         {message.content && (
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         )}
-        <span
-          className={`text-[10px] mt-1 block ${isInbound ? 'text-gray-400' : 'text-white/70'
-            }`}
-        >
-          {format(new Date(message.sent_at), 'HH:mm')}
-        </span>
       </div>
+      <span className={`font-label text-[10px] ${isInbound ? 'text-on-surface-variant ml-1' : isManual ? 'text-tertiary/70 mr-1' : 'text-primary/70 mr-1'}`}>
+        {format(new Date(message.sent_at), 'HH:mm')}
+      </span>
     </div>
   );
 }
@@ -518,7 +484,7 @@ function InfoPanel({
   return (
     <div className="p-4 space-y-6">
       {/* Qualification Progress */}
-      <QualificationProgress conversation={conversation} />
+      <QualificationProgressBar currentStep={conversation.qualification_step || 1} />
 
       <Separator />
 

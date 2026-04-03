@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="light" lang="nl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed": "#002109",
+                        "tertiary-fixed-dim": "#b4c5ff",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-fixed": "#00174b",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary": "#006b2c",
+                        "on-primary": "#ffffff",
+                        "outline": "#6e7b6c",
+                        "on-surface-variant": "#3e4a3d",
+                        "on-secondary-fixed-variant": "#7f2b00",
+                        "tertiary-container": "#316bf3",
+                        "secondary-container": "#fd651e",
+                        "on-tertiary-container": "#fefcff",
+                        "primary-fixed-dim": "#62df7d",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#7ffc97",
+                        "secondary-fixed-dim": "#ffb599",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#f7fff2",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-primary-fixed-variant": "#005320",
+                        "on-secondary-fixed": "#370e00",
+                        "outline-variant": "#bdcaba",
+                        "on-tertiary-fixed-variant": "#003ea8",
+                        "surface-tint": "#006e2d",
+                        "tertiary-fixed": "#dbe1ff",
+                        "on-secondary-container": "#571a00",
+                        "on-background": "#0b1c30",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#00873a",
+                        "secondary-fixed": "#ffdbce",
+                        "inverse-primary": "#62df7d",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#0051d5",
+                        "background": "#f8f9ff",
+                        "secondary": "#a73a00",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-surface": "#0b1c30",
+                        "inverse-surface": "#213145",
+                        "surface-bright": "#f8f9ff"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Manrope"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { font-family: 'Manrope', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-background min-h-screen pb-32">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-40 bg-[#f8f9ff] dark:bg-slate-950 flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full">
+<span class="material-symbols-outlined text-[#006b2c] dark:text-green-400">arrow_back</span>
+</button>
+<h1 class="font-manrope font-bold text-2xl tracking-tight text-[#006b2c] dark:text-green-400">Gesprekken</h1>
+</div>
+<button class="active:scale-95 duration-200 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full">
+<span class="material-symbols-outlined text-[#006b2c] dark:text-green-400">search</span>
+</button>
+</header>
+<!-- Separation Line -->
+<div class="bg-[#eff4ff] dark:bg-slate-900 h-[1px] w-full mb-4"></div>
+<!-- Filter Section -->
+<div class="px-6 mb-6 overflow-x-auto hide-scrollbar flex gap-3">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all">Alle</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider hover:bg-surface-container-high transition-all">Actief</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider hover:bg-surface-container-high transition-all">Gepauzeerd</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider hover:bg-surface-container-high transition-all">Volledig</button>
+</div>
+<!-- Conversation List -->
+<main class="px-4 space-y-3">
+<!-- Card 1: Active -->
+<div class="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-[0_12px_32px_-4px_rgba(11,28,48,0.06)] border border-outline-variant/10 active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-headline font-bold text-on-background">Pieter van der Berg</span>
+</div>
+<span class="font-label text-on-surface-variant text-xs">14:20</span>
+</div>
+<div class="flex items-center gap-2 mb-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight text-primary bg-primary/10 border border-primary/20">Bot actief</span>
+</div>
+<div class="flex items-center gap-3 mb-4">
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant/70 font-semibold uppercase">3/5 stappen</span>
+</div>
+<p class="text-on-surface-variant/80 text-sm truncate font-body leading-relaxed">Ik zou graag een offerte ontvangen voor de heraanleg van mijn achtertuin...</p>
+</div>
+<!-- Card 2: Paused -->
+<div class="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-[0_12px_32px_-4px_rgba(11,28,48,0.06)] border border-outline-variant/10 active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-secondary"></div>
+<span class="font-headline font-bold text-on-background">Annelies de Wit</span>
+</div>
+<span class="font-label text-on-surface-variant text-xs">11:05</span>
+</div>
+<div class="flex items-center gap-2 mb-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight text-secondary bg-secondary/10 border border-secondary/20">Bot gepauzeerd</span>
+</div>
+<div class="flex items-center gap-3 mb-4">
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant/70 font-semibold uppercase">1/5 stappen</span>
+</div>
+<p class="text-on-surface-variant/80 text-sm truncate font-body leading-relaxed">Kunt u mij bellen over de afspraak van morgenochtend?</p>
+</div>
+<!-- Card 3: Qualified -->
+<div class="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-[0_12px_32px_-4px_rgba(11,28,48,0.06)] border border-outline-variant/10 active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-tertiary"></div>
+<span class="font-headline font-bold text-on-background">Mark Janssen</span>
+</div>
+<span class="font-label text-on-surface-variant text-xs">Gisteren</span>
+</div>
+<div class="flex items-center gap-2 mb-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight text-tertiary bg-tertiary/10 border border-tertiary/20">Volledig gekwalificeerd</span>
+</div>
+<div class="flex items-center gap-3 mb-4">
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant/70 font-semibold uppercase">5/5 stappen</span>
+</div>
+<p class="text-on-surface-variant/80 text-sm truncate font-body leading-relaxed">Alle details zijn ingevuld. De klant wacht op de definitieve planning.</p>
+</div>
+<!-- Card 4: Active -->
+<div class="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-[0_12px_32px_-4px_rgba(11,28,48,0.06)] border border-outline-variant/10 active:scale-[0.98] transition-transform">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-headline font-bold text-on-background">Sophie de Groot</span>
+</div>
+<span class="font-label text-on-surface-variant text-xs">Maandag</span>
+</div>
+<div class="flex items-center gap-2 mb-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight text-primary bg-primary/10 border border-primary/20">Bot actief</span>
+</div>
+<div class="flex items-center gap-3 mb-4">
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant/30"></div>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant/70 font-semibold uppercase">2/5 stappen</span>
+</div>
+<p class="text-on-surface-variant/80 text-sm truncate font-body leading-relaxed">Wat zijn de gemiddelde kosten voor het onderhouden van een middelgrote tuin?</p>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+<div class="fixed bottom-4 left-4 right-4 rounded-3xl border border-white/10 shadow-[0_12px_32px_-4px_rgba(11,28,48,0.06)] flex justify-around items-center py-2 px-2">
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-inter font-bold text-[10px] uppercase tracking-wider">Dashboard</span>
+</a>
+<!-- Gesprekken (Active) -->
+<a class="flex flex-col items-center justify-center text-[#006b2c] dark:text-green-400 bg-[#eff4ff]/50 dark:bg-green-900/20 rounded-xl px-4 py-2 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+<span class="font-inter font-bold text-[10px] uppercase tracking-wider">Gesprekken</span>
+</a>
+<!-- E-mails -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">mail</span>
+<span class="font-inter font-bold text-[10px] uppercase tracking-wider">E-mails</span>
+</a>
+</div>
+</nav>
+</body></html>

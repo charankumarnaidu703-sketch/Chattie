@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="light" lang="nl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-dim": "#cbdbf5",
+              "on-primary-fixed": "#002109",
+              "tertiary-fixed-dim": "#b4c5ff",
+              "surface-container": "#e5eeff",
+              "on-tertiary-fixed": "#00174b",
+              "inverse-on-surface": "#eaf1ff",
+              "primary": "#006b2c",
+              "on-primary": "#ffffff",
+              "outline": "#6e7b6c",
+              "on-surface-variant": "#3e4a3d",
+              "on-secondary-fixed-variant": "#7f2b00",
+              "tertiary-container": "#316bf3",
+              "secondary-container": "#fd651e",
+              "on-tertiary-container": "#fefcff",
+              "primary-fixed-dim": "#62df7d",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#7ffc97",
+              "secondary-fixed-dim": "#ffb599",
+              "on-error": "#ffffff",
+              "on-primary-container": "#f7fff2",
+              "surface-container-lowest": "#ffffff",
+              "surface": "#f8f9ff",
+              "on-primary-fixed-variant": "#005320",
+              "on-secondary-fixed": "#370e00",
+              "outline-variant": "#bdcaba",
+              "on-tertiary-fixed-variant": "#003ea8",
+              "surface-tint": "#006e2d",
+              "tertiary-fixed": "#dbe1ff",
+              "on-secondary-container": "#571a00",
+              "on-background": "#0b1c30",
+              "error": "#ba1a1a",
+              "error-container": "#ffdad6",
+              "surface-variant": "#d3e4fe",
+              "on-tertiary": "#ffffff",
+              "primary-container": "#00873a",
+              "secondary-fixed": "#ffdbce",
+              "inverse-primary": "#62df7d",
+              "surface-container-high": "#dce9ff",
+              "surface-container-low": "#eff4ff",
+              "on-error-container": "#93000a",
+              "tertiary": "#0051d5",
+              "background": "#f8f9ff",
+              "secondary": "#a73a00",
+              "surface-container-highest": "#d3e4fe",
+              "on-surface": "#0b1c30",
+              "inverse-surface": "#213145",
+              "surface-bright": "#f8f9ff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .chat-scroll {
+            height: calc(100vh - 340px);
+            overflow-y: auto;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-background min-h-screen flex flex-col">
+<!-- Top Navigation Anchor (Manual Overwrite for Sub-page context) -->
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md">
+<div class="flex justify-between items-center w-full px-4 py-3 border-b border-outline-variant/10">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 hover:bg-surface-container-low rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="font-headline font-bold text-lg text-on-background tracking-tight">Jan de Vries</h1>
+<span class="font-label text-[11px] text-on-surface-variant font-medium tracking-widest tabular-nums">+31 6 1234 5678</span>
+</div>
+</div>
+<button class="bg-secondary-container/10 border border-secondary-container text-secondary-container px-3 py-1.5 rounded-xl flex items-center gap-2 font-label text-xs font-bold uppercase tracking-wider active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">pause</span>
+                Pauze
+            </button>
+</div>
+<!-- Alert Banner -->
+<div class="bg-secondary/5 border-b border-secondary/10 px-4 py-2.5 flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-base" style="font-variation-settings: 'FILL' 1;">error</span>
+<p class="font-label text-[12px] font-semibold text-secondary">Bot gepauzeerd — u beheert dit gesprek</p>
+</div>
+<!-- Qualification Progress Panel -->
+<div class="bg-surface-container-low px-4 py-3 flex justify-between items-center cursor-pointer">
+<div class="flex flex-col gap-1.5">
+<div class="flex gap-1.5">
+<div class="h-1.5 w-6 rounded-full bg-primary"></div>
+<div class="h-1.5 w-6 rounded-full bg-primary"></div>
+<div class="h-1.5 w-6 rounded-full bg-primary"></div>
+<div class="h-1.5 w-6 rounded-full bg-outline-variant/30"></div>
+<div class="h-1.5 w-6 rounded-full bg-outline-variant/30"></div>
+</div>
+<span class="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">3/5 stappen gekwalificeerd</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+</div>
+</header>
+<!-- Main Chat Area -->
+<main class="flex-1 px-4 py-6 flex flex-col gap-2 chat-scroll">
+<!-- Bot Message -->
+<div class="flex flex-col items-end gap-1 mb-2">
+<div class="bg-primary text-on-primary p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm">
+<p class="text-[15px] leading-relaxed">Om een goede inschatting te maken voor uw nieuwe tuin: wat zijn ongeveer de afmetingen van het perceel?</p>
+</div>
+<span class="font-label text-[10px] text-primary/70 mr-1">14:02</span>
+</div>
+<!-- Customer Message -->
+<div class="flex flex-col items-start gap-1 mb-2">
+<div class="bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm">
+<p class="text-[15px] leading-relaxed text-on-background">Het gaat om ongeveer 50 vierkante meter in totaal.</p>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant ml-1">14:05</span>
+</div>
+<!-- Bot Message -->
+<div class="flex flex-col items-end gap-1 mb-2">
+<div class="bg-primary text-on-primary p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm">
+<p class="text-[15px] leading-relaxed">Bedankt! En kunt u ook de lengte en de breedte doorgeven? Bijvoorbeeld 10x5 meter?</p>
+</div>
+<span class="font-label text-[10px] text-primary/70 mr-1">14:05</span>
+</div>
+<!-- Customer Message -->
+<div class="flex flex-col items-start gap-1 mb-2">
+<div class="bg-surface-container-lowest border border-outline-variant/20 p-4 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm">
+<p class="text-[15px] leading-relaxed text-on-background">De tuin is 8x6 meter.</p>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant ml-1">14:08</span>
+</div>
+<!-- Bot Message -->
+<div class="flex flex-col items-end gap-1 mb-2">
+<div class="bg-primary text-on-primary p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-sm">
+<p class="text-[15px] leading-relaxed">Helemaal duidelijk. Zou u enkele foto's kunnen sturen van de huidige situatie?</p>
+</div>
+<span class="font-label text-[10px] text-primary/70 mr-1">14:08</span>
+</div>
+<!-- Manual Operator Message (Blue) -->
+<div class="flex flex-col items-end gap-1 mt-4">
+<span class="font-label text-[9px] font-bold text-tertiary uppercase tracking-widest mr-1">Handmatig</span>
+<div class="bg-tertiary text-on-tertiary p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-md">
+<p class="text-[15px] leading-relaxed">Dag Jan, ik neem het even over van de assistent. Heeft u ook al een voorkeur voor het type bestrating?</p>
+</div>
+<span class="font-label text-[10px] text-tertiary/70 mr-1">14:15</span>
+</div>
+</main>
+<!-- Bottom Interaction Area -->
+<div class="mt-auto pb-[100px] px-4 pt-4 bg-surface border-t border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="flex-1 bg-surface-container-highest rounded-2xl flex items-center px-4 py-3">
+<input class="bg-transparent border-none focus:ring-0 text-sm flex-1 font-medium text-on-background placeholder:text-on-surface-variant/50" placeholder="Typ uw bericht..." type="text"/>
+<span class="material-symbols-outlined text-on-surface-variant/60 cursor-pointer">attach_file</span>
+</div>
+<button class="w-12 h-12 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<!-- Bottom Navigation Bar (Filtered per rule: Shell Suppressed on detail view but prompt requested matching navigation) -->
+<!-- Applying BottomNavBar JSON styles -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+<div class="fixed bottom-4 left-4 right-4 rounded-3xl border border-white/10 shadow-[0_12px_32px_-4px_rgba(11,28,48,0.06)] flex justify-around items-center bg-white/40 dark:bg-slate-900/40 p-2">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label font-bold text-[10px] uppercase tracking-wider">Dashboard</span>
+</a>
+<!-- Active: Gesprekken -->
+<a class="flex flex-col items-center justify-center text-[#006b2c] dark:text-green-400 bg-[#eff4ff]/50 dark:bg-green-900/20 rounded-xl px-4 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+<span class="font-label font-bold text-[10px] uppercase tracking-wider">Gesprekken</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">mail</span>
+<span class="font-label font-bold text-[10px] uppercase tracking-wider">E-mails</span>
+</a>
+</div>
+</nav>
+</body></html>

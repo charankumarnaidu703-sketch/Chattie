@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MessageSquare, Mail, Phone, Building2, Clock } from 'lucide-react';
+import { Home, MessageSquare, Mail, Building2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/conversations', label: 'Gesprekken', icon: MessageSquare },
-  { href: '/emails', label: 'Emails', icon: Mail },
-  { href: '/call-notes', label: 'Belnotities', icon: Phone },
+  { href: '/emails', label: 'E-mails', icon: Mail },
   { href: '/company-info', label: 'Bedrijf', icon: Building2 },
   { href: '/follow-ups', label: 'Follow-ups', icon: Clock },
 ];
@@ -18,9 +17,9 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
-        {navItems.map((item) => {
+    <nav className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
+      <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_12px_32px_-4px_rgba(11,28,48,0.1)] border border-outline-variant/10 flex justify-around items-center py-2 px-1">
+        {navItems.slice(0, 3).map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
@@ -30,14 +29,14 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 flex-1 py-2 rounded-lg transition-colors min-h-[44px]',
+                'flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 active:scale-90 min-h-[48px]',
                 isActive
-                  ? 'text-green-600'
-                  : 'text-gray-400 hover:text-gray-600'
+                  ? 'text-primary bg-surface-container-low/50'
+                  : 'text-outline hover:text-on-surface-variant'
               )}
             >
               <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="font-label font-bold text-[10px] uppercase tracking-wider">{item.label}</span>
             </Link>
           );
         })}
@@ -50,15 +49,15 @@ export function DesktopSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0">
+    <aside className="hidden md:flex flex-col w-64 bg-surface-container-low h-screen sticky top-0">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
-        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-          <span className="text-white font-bold text-lg">C</span>
+      <div className="flex items-center gap-3 px-6 py-6">
+        <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-ambient">
+          <span className="text-white font-headline font-extrabold text-lg">C</span>
         </div>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">Chattie</h1>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Dashboard</p>
+          <h1 className="text-lg font-headline font-extrabold text-primary tracking-tight">Chattie</h1>
+          <p className="font-label text-[10px] text-outline uppercase tracking-widest">Dashboard</p>
         </div>
       </div>
 
@@ -74,13 +73,13 @@ export function DesktopSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                'flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-body font-semibold transition-all duration-200',
                 isActive
-                  ? 'bg-green-50 text-green-700 shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-surface-container-lowest text-primary shadow-ambient'
+                  : 'text-on-surface-variant hover:bg-surface-container hover:text-on-background'
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className={cn('h-5 w-5', isActive && 'stroke-[2.5]')} />
               {item.label}
             </Link>
           );
@@ -88,9 +87,9 @@ export function DesktopSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-100">
-        <p className="text-xs text-gray-400">Chattie v1.0</p>
-        <p className="text-[10px] text-gray-300">AI Klantenservice</p>
+      <div className="px-6 py-5">
+        <p className="font-label text-[10px] text-outline uppercase tracking-widest">Chattie v1.0</p>
+        <p className="font-label text-[10px] text-outline-variant mt-0.5">AI Klantenservice</p>
       </div>
     </aside>
   );
