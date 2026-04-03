@@ -81,7 +81,7 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
 
             {/* Qualification progress */}
             <div className="mt-2.5">
-              <QualificationProgress conversation={conversation} compact />
+              <QualificationProgress currentStep={conversation.qualification_step || 1} />
             </div>
           </div>
         </div>
