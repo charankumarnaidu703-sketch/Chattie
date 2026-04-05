@@ -1,14 +1,14 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getSupabaseClient } from '@/lib/supabase/client-server-wrapper';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { EmailDetailClient } from './EmailDetailClient';
 import type { EmailThreadWithMessages } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function EmailDetailPage({ params }: { params: { id: string } }) {
-  const supabase = getSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   // Fetch the email thread with contact and messages
   const { data: thread, error } = await supabase

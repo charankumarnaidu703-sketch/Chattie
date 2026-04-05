@@ -2,10 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
-import { ArrowLeft, Send, Bot, Pause, User, Mail, PlusCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Send, Bot, Pause, User, Mail, PlusCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { StatusBadge } from '@/components/StatusBadge';
@@ -19,15 +17,14 @@ interface Props {
 }
 
 export function EmailDetailClient({ initialThread }: Props) {
-  const router = useRouter();
   const [thread, setThread] = useState(initialThread);
   const [messages, setMessages] = useState<EmailMessage[]>(initialThread.email_messages || []);
   const [isBotEnabled, setIsBotEnabled] = useState(initialThread.bot_enabled ?? false);
-  
+
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isChangingBot, setIsChangingBot] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = getSupabaseClient();
 
@@ -37,11 +34,16 @@ export function EmailDetailClient({ initialThread }: Props) {
 
   // Realtime subscription
   useEffect(() => {
+    const channelName1 = 'email_messages:' + thread.id;
+    const channelName2 = 'email_threads:' + thread.id;
+    const filterMsg = 'thread_id=eq.' + thread.id;
+    const filterThread = 'id=eq.' + thread.id;
+
     const messagesSubscription = supabase
-      .channel(\`email_messages:\${thread.id}\`)
+      .channel(channelName1)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'email_messages', filter: \`thread_id=eq.\${thread.id}\` },
+        { event: 'INSERT', schema: 'public', table: 'email_messages', filter: filterMsg },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as EmailMessage]);
         }
@@ -49,10 +51,10 @@ export function EmailDetailClient({ initialThread }: Props) {
       .subscribe();
 
     const threadSubscription = supabase
-      .channel(\`email_threads:\${thread.id}\`)
+      .channel(channelName2)
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'email_threads', filter: \`id=eq.\${thread.id}\` },
+        { event: 'UPDATE', schema: 'public', table: 'email_threads', filter: filterThread },
         (payload) => {
           setThread((prev) => ({ ...prev, ...payload.new }));
           setIsBotEnabled(payload.new.bot_enabled);
@@ -74,9 +76,9 @@ export function EmailDetailClient({ initialThread }: Props) {
         .from('email_threads')
         .update({ bot_enabled: newState })
         .eq('id', thread.id);
-      
+
       if (error) throw error;
-      
+
       setIsBotEnabled(newState);
       toast.success(newState ? 'Bot Resumeert' : 'Bot Gepauzeerd');
     } catch {
@@ -99,14 +101,9 @@ export function EmailDetailClient({ initialThread }: Props) {
         setIsBotEnabled(false);
       }
 
-      // We send it to a backend endpoint or an n8n webhook ideally.
-      // But for now we just insert into email_messages and rely on backend listening to it?
-      // Actually we don't have an outbound manual email webhook set up.
-      // We will insert to DB and display a toast that we need an automation for it.
-      
       const { error } = await supabase.from('email_messages').insert({
         thread_id: thread.id,
-        gmail_message_id: \`manual-\${Date.now()}\`,
+        gmail_message_id: 'manual-' + Date.now(),
         direction: 'outbound',
         content: newMessage.trim(),
         sent_by_bot: false,
@@ -124,19 +121,29 @@ export function EmailDetailClient({ initialThread }: Props) {
     }
   };
 
-  const statusColor = 
-    thread.status === 'qualified' ? 'tertiary' : 
+  const statusColor: 'primary' | 'secondary' | 'tertiary' =
+    thread.status === 'qualified' ? 'tertiary' :
     thread.status === 'closed' ? 'secondary' : 'primary';
+
+  const getBubbleClass = (isInbound: boolean, sentByBot: boolean) => {
+    if (isInbound) return 'bg-surface-container-low text-on-background rounded-bl-md';
+    if (sentByBot) return 'bg-primary/10 text-primary border border-primary/20 rounded-br-md';
+    return 'bg-tertiary text-on-tertiary rounded-br-md';
+  };
+
+  const botButtonClass = isBotEnabled
+    ? 'bg-primary/10 text-primary hover:bg-primary/20'
+    : 'bg-surface-container text-on-surface hover:bg-surface-container-high';
 
   return (
     <div className="flex-1 flex flex-col md:flex-row overflow-hidden rounded-[2rem] bg-surface-container-lowest border border-outline-variant/10 shadow-ambient">
-      
-      {/* 🔴 MAIN CHAT AREA */}
+
+      {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className="bg-surface-container-lowest/80 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-outline-variant/10 z-10">
           <div className="flex items-center gap-4">
-            <Link 
+            <Link
               href="/emails"
               className="p-2 -ml-2 rounded-full hover:bg-surface-container transition-colors active:scale-95"
             >
@@ -159,12 +166,7 @@ export function EmailDetailClient({ initialThread }: Props) {
           <button
             onClick={toggleBot}
             disabled={isChangingBot}
-            className={\`
-              hidden md:flex items-center gap-2 px-4 py-2 rounded-full font-label text-[11px] font-bold uppercase tracking-wider transition-all
-              \${isBotEnabled 
-                ? 'bg-primary/10 text-primary hover:bg-primary/20' 
-                : 'bg-surface-container text-on-surface hover:bg-surface-container-high'}
-            \`}
+            className={'hidden md:flex items-center gap-2 px-4 py-2 rounded-full font-label text-[11px] font-bold uppercase tracking-wider transition-all ' + botButtonClass}
           >
             {isBotEnabled ? (
               <><Bot className="h-4 w-4" /> Bot is Actief</>
@@ -182,38 +184,25 @@ export function EmailDetailClient({ initialThread }: Props) {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Added a thread start block containing the first subject */}
               <div className="text-center">
                 <span className="inline-block bg-surface-container-high text-on-surface text-[10px] font-bold font-label uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
                   Onderwerp: {thread.subject || '(Geen onderwerp)'}
                 </span>
               </div>
 
-              {messages.map((msg, i) => {
+              {messages.map((msg) => {
                 const isInbound = msg.direction === 'inbound';
-                
+
                 return (
-                  <div key={msg.id} className={\`flex \${isInbound ? 'justify-start' : 'justify-end'}\`}>
-                    <div className={\`max-w-[85%] md:max-w-[70%] flex flex-col gap-1 \${isInbound ? 'items-start' : 'items-end'}\`}>
-                      
-                      {/* Message Bubble container */}
+                  <div key={msg.id} className={'flex ' + (isInbound ? 'justify-start' : 'justify-end')}>
+                    <div className={'max-w-[85%] md:max-w-[70%] flex flex-col gap-1 ' + (isInbound ? 'items-start' : 'items-end')}>
+
                       <div className="flex items-end gap-2 group">
-                        
-                        <div
-                          className={\`
-                            relative px-6 py-4 rounded-3xl whitespace-pre-wrap font-body text-[15px] leading-relaxed
-                            \${isInbound 
-                              ? 'bg-surface-container-low text-on-background rounded-bl-md' 
-                              : msg.sent_by_bot 
-                                ? 'bg-primary/10 text-primary border border-primary/20 rounded-br-md'
-                                : 'bg-tertiary text-on-tertiary rounded-br-md'}
-                          \`}
-                        >
+                        <div className={'relative px-6 py-4 rounded-3xl whitespace-pre-wrap font-body text-[15px] leading-relaxed ' + getBubbleClass(isInbound, msg.sent_by_bot)}>
                           {msg.content}
                         </div>
                       </div>
 
-                      {/* Timestamp & Metadata */}
                       <div className="flex items-center gap-1.5 px-2 mt-1">
                         <span className="font-label text-[10px] text-outline tracking-wider">
                           {format(new Date(msg.sent_at), 'HH:mm')}
@@ -229,7 +218,7 @@ export function EmailDetailClient({ initialThread }: Props) {
                           </span>
                         )}
                       </div>
-                      
+
                     </div>
                   </div>
                 );
@@ -250,7 +239,7 @@ export function EmailDetailClient({ initialThread }: Props) {
               onChange={(e) => {
                 setNewMessage(e.target.value);
                 e.target.style.height = 'auto';
-                e.target.style.height = \`\${Math.min(e.target.scrollHeight, 120)}px\`;
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -258,11 +247,11 @@ export function EmailDetailClient({ initialThread }: Props) {
                   sendMessage();
                 }
               }}
-              placeholder={isBotEnabled ? "Typ een antwoord (pauzeert AI agent)..." : "Typ een bericht..."}
+              placeholder={isBotEnabled ? 'Typ een antwoord (pauzeert AI agent)...' : 'Typ een bericht...'}
               className="flex-1 max-h-[120px] bg-transparent font-body text-[15px] text-on-background placeholder:text-on-surface-variant/50 focus:outline-none resize-none py-3 min-h-[48px] overflow-y-auto"
               rows={1}
             />
-            <button 
+            <button
               onClick={sendMessage}
               disabled={!newMessage.trim() || isSending}
               className="flex-shrink-0 p-3 bg-tertiary text-on-tertiary rounded-full hover:bg-tertiary/90 transition-all disabled:opacity-50 disabled:bg-surface-container disabled:text-outline active:scale-95"
@@ -273,15 +262,15 @@ export function EmailDetailClient({ initialThread }: Props) {
         </div>
       </div>
 
-      {/* 🟢 SIDEBAR - QUALIFICATION */}
-      <div className="w-full md:w-80 lg:w-96 bg-surface-container-low border-l border-outline-variant/10 flex flex-col h-full overflow-y-auto hidden md:flex">
+      {/* SIDEBAR - QUALIFICATION */}
+      <div className="w-full md:w-80 lg:w-96 bg-surface-container-low border-l border-outline-variant/10 flex-col h-full overflow-y-auto hidden md:flex">
         <div className="p-6">
           <h3 className="font-headline font-bold text-sm tracking-widest uppercase text-primary mb-6">
             Kwalificatie
           </h3>
-          
-          <QualificationProgress 
-            currentStep={thread.qualification_step || 1} 
+
+          <QualificationProgress
+            currentStep={thread.qualification_step || 1}
             color={statusColor}
           />
 
@@ -289,42 +278,40 @@ export function EmailDetailClient({ initialThread }: Props) {
             {QUALIFICATION_STEPS.map((stepInfo) => {
               const isCurrent = stepInfo.step === (thread.qualification_step || 1) && !thread.qualification_complete;
               const isPast = thread.qualification_complete || stepInfo.step < (thread.qualification_step || 1);
-              
-              // Handle mapping for email thread fields (e.g. collected_phone vs collected_email)
-              // Wait, QUALIFICATION_STEPS might be hardcoded to phone.
-              const fieldValue = thread[stepInfo.field as keyof typeof thread] as string | null | undefined;
-              
+
+              const fieldValue = (thread as Record<string, unknown>)[stepInfo.field] as string | null | undefined;
+
+              const stepCircleClass = isPast
+                ? 'bg-primary text-on-primary'
+                : isCurrent
+                  ? 'bg-primary/20 text-primary border border-primary/30'
+                  : 'bg-surface-container-highest text-outline';
+
+              const lineClass = isPast ? 'bg-primary/30' : 'bg-surface-container-highest';
+
+              const fieldClass = fieldValue
+                ? 'bg-surface-container border-outline-variant/20 text-on-background'
+                : isCurrent
+                  ? 'bg-primary/5 border-primary/20 text-primary/70 italic'
+                  : 'bg-transparent border-dashed border-outline-variant/50 text-outline italic';
+
               return (
                 <div key={stepInfo.step} className="flex gap-4 group">
                   <div className="flex-shrink-0 mt-0.5 relative flex flex-col items-center">
-                    <div className={\`
-                      w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors
-                      \${isPast 
-                        ? 'bg-primary text-on-primary' 
-                        : isCurrent
-                          ? 'bg-primary/20 text-primary border border-primary/30'
-                          : 'bg-surface-container-highest text-outline'}
-                    \`}>
+                    <div className={'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ' + stepCircleClass}>
                       {isPast ? <CheckCircle2 className="h-4 w-4" /> : stepInfo.step}
                     </div>
                     {stepInfo.step < 5 && (
-                      <div className={\`w-[2px] h-full absolute top-7 -bottom-6 \${isPast ? 'bg-primary/30' : 'bg-surface-container-highest'}\`} />
+                      <div className={'w-[2px] h-full absolute top-7 -bottom-6 ' + lineClass} />
                     )}
                   </div>
-                  
+
                   <div className="pb-6">
                     <div className="font-label font-bold text-xs uppercase tracking-wider text-on-surface-variant mb-1.5 flex items-center gap-2">
-                       {stepInfo.icon} {stepInfo.label === 'Email' ? 'Telefoon' : stepInfo.label} {/* We're asking for phone via email */}
+                       {stepInfo.icon} {stepInfo.label}
                     </div>
-                    
-                    <div className={\`
-                      font-body text-sm leading-relaxed p-3 rounded-2xl border transition-colors
-                      \${fieldValue
-                        ? 'bg-surface-container border-outline-variant/20 text-on-background'
-                        : isCurrent
-                          ? 'bg-primary/5 border-primary/20 text-primary/70 italic'
-                          : 'bg-transparent border-dashed border-outline-variant/50 text-outline italic'}
-                    \`}>
+
+                    <div className={'font-body text-sm leading-relaxed p-3 rounded-2xl border transition-colors ' + fieldClass}>
                       {fieldValue || (isCurrent ? 'Wachten op klant...' : 'Nog niet gevraagd')}
                     </div>
                   </div>

@@ -137,11 +137,11 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={\`px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 \${
+            className={`px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 ${
               activeTab === tab.key
                 ? 'bg-primary text-on-primary'
                 : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high'
-            }\`}
+            }`}
           >
             {tab.label}
           </button>
@@ -152,7 +152,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
       {filtered.length === 0 ? (
         <EmptyState
           message={searchQuery ? 'Geen resultaten gevonden' : 'Geen e-mails in deze categorie'}
-          subMessage={searchQuery ? \`Geen e-mails gevonden voor "\${searchQuery}"\` : 'Klant emails verschijnen hier automatisch.'}
+          subMessage={searchQuery ? `Geen e-mails gevonden voor "${searchQuery}"` : 'Klant emails verschijnen hier automatisch.'}
         />
       ) : (
         <div className="space-y-3 pb-8">
@@ -164,7 +164,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
 
             return (
               <div key={thread.id} className="relative group">
-                <Link href={\`/emails/\${thread.id}\`} className="block relative z-0">
+                <Link href={`/emails/${thread.id}`} className="block relative z-0">
                   <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 active:scale-[0.98] transition-transform">
                     {/* Name + Time */}
                     <div className="flex justify-between items-start mb-2 pr-10">
