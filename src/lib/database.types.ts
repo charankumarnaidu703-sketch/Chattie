@@ -95,6 +95,7 @@ export type Database = {
           qualification_step: number;
           qualification_complete: boolean;
           summary_sent_at: string | null;
+          source: 'whatsapp' | 'email';
           created_at: string;
           updated_at: string;
         };
@@ -114,6 +115,7 @@ export type Database = {
           qualification_step?: number;
           qualification_complete?: boolean;
           summary_sent_at?: string | null;
+          source?: 'whatsapp' | 'email';
           created_at?: string;
           updated_at?: string;
         };
@@ -133,6 +135,7 @@ export type Database = {
           qualification_step?: number;
           qualification_complete?: boolean;
           summary_sent_at?: string | null;
+          source?: 'whatsapp' | 'email';
           created_at?: string;
           updated_at?: string;
         };
@@ -206,6 +209,17 @@ export type Database = {
           draft_created: boolean;
           draft_gmail_id: string | null;
           processed_at: string;
+          status: 'new' | 'active' | 'qualified' | 'closed';
+          bot_enabled: boolean;
+          qualification_step: number;
+          qualification_complete: boolean;
+          collected_address: string | null;
+          collected_wishes: string | null;
+          collected_dimensions: string | null;
+          collected_phone: string | null;
+          body_preview: string | null;
+          last_reply_at: string | null;
+          pending_reply: boolean;
         };
         Insert: {
           id?: string;
@@ -219,6 +233,17 @@ export type Database = {
           draft_created?: boolean;
           draft_gmail_id?: string | null;
           processed_at?: string;
+          status?: 'new' | 'active' | 'qualified' | 'closed';
+          bot_enabled?: boolean;
+          qualification_step?: number;
+          qualification_complete?: boolean;
+          collected_address?: string | null;
+          collected_wishes?: string | null;
+          collected_dimensions?: string | null;
+          collected_phone?: string | null;
+          body_preview?: string | null;
+          last_reply_at?: string | null;
+          pending_reply?: boolean;
         };
         Update: {
           id?: string;
@@ -232,6 +257,17 @@ export type Database = {
           draft_created?: boolean;
           draft_gmail_id?: string | null;
           processed_at?: string;
+          status?: 'new' | 'active' | 'qualified' | 'closed';
+          bot_enabled?: boolean;
+          qualification_step?: number;
+          qualification_complete?: boolean;
+          collected_address?: string | null;
+          collected_wishes?: string | null;
+          collected_dimensions?: string | null;
+          collected_phone?: string | null;
+          body_preview?: string | null;
+          last_reply_at?: string | null;
+          pending_reply?: boolean;
         };
         Relationships: [
           {
@@ -239,6 +275,47 @@ export type Database = {
             columns: ['contact_id'];
             isOneToOne: false;
             referencedRelation: 'contacts';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      email_messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          gmail_message_id: string;
+          direction: 'inbound' | 'outbound';
+          content: string | null;
+          sent_by_bot: boolean;
+          sent_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          gmail_message_id: string;
+          direction: 'inbound' | 'outbound';
+          content?: string | null;
+          sent_by_bot?: boolean;
+          sent_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          thread_id?: string;
+          gmail_message_id?: string;
+          direction?: 'inbound' | 'outbound';
+          content?: string | null;
+          sent_by_bot?: boolean;
+          sent_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'email_messages_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'email_threads';
             referencedColumns: ['id'];
           }
         ];

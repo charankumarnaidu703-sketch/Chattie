@@ -5,6 +5,7 @@ export type Contact = Database['public']['Tables']['contacts']['Row'];
 export type Conversation = Database['public']['Tables']['conversations']['Row'];
 export type Message = Database['public']['Tables']['messages']['Row'];
 export type EmailThread = Database['public']['Tables']['email_threads']['Row'];
+export type EmailMessage = Database['public']['Tables']['email_messages']['Row'];
 export type CallNote = Database['public']['Tables']['call_notes']['Row'];
 export type SystemEvent = Database['public']['Tables']['system_events']['Row'];
 
@@ -16,6 +17,15 @@ export type ConversationWithContact = Conversation & {
 export type ConversationWithMessages = Conversation & {
   contacts: Contact;
   messages: Message[];
+};
+
+export type EmailThreadWithContact = EmailThread & {
+  contacts: Contact | null;
+};
+
+export type EmailThreadWithMessages = EmailThread & {
+  contacts: Contact | null;
+  email_messages: EmailMessage[];
 };
 
 // Qualification step metadata

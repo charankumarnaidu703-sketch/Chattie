@@ -1,0 +1,509 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 60
+            }
+          ]
+        }
+      },
+      "id": "1223c600-b4bd-4e9a-9930-a0dae59e5618",
+      "name": "Schedule Trigger — Every 60s",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3616,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "pending_reply",
+              "value": "eq.true"
+            },
+            {
+              "name": "bot_enabled",
+              "value": "eq.true"
+            },
+            {
+              "name": "select",
+              "value": "*"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6b95ff04-f9ed-4567-8c4b-13b1dfdc7725",
+      "name": "Find Pending Email Threads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3392,
+        400
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst now = new Date();\nconst DEBOUNCE_SECONDS = 300; // 5 mins for email\n\nfor (const item of items) {\n  const data = item.json;\n  if (!data.pending_reply) continue;\n  \n  const pendingSince = new Date(data.last_reply_at || Date.now());\n  const ageSeconds = (now.getTime() - pendingSince.getTime()) / 1000;\n  \n  if (ageSeconds >= DEBOUNCE_SECONDS) {\n    results.push({ json: data });\n  }\n}\nreturn results;"
+      },
+      "id": "626b9e32-3005-45dd-a46a-96f87a7162b1",
+      "name": "Filter — Ready Email Threads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3168,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "thread_id",
+              "value": "=eq.{{ $json.id }}"
+            },
+            {
+              "name": "order",
+              "value": "sent_at.desc"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            },
+            {
+              "name": "select",
+              "value": "direction,content,type,sent_at"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "f2f65089-9ad2-498f-a31d-282b7eb016a2",
+      "name": "Get Email Message History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2944,
+        400
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const thread = $('Filter — Ready Email Threads').first().json;\nconst history = $('Get Email Message History').all().map(i => i.json).reverse();\n\nconst historyStr = history.map((m, i) => `[${i + 1}] Direction: ${m.direction} | Content: ${m.content}`).join('\\n\\n---');\n\nconst userMessage = `COLLECTED DATA:\nAddress: ${thread.collected_address ?? 'NOT YET COLLECTED'}\nWishes: ${thread.collected_wishes ?? 'NOT YET COLLECTED'}\nDimensions: ${thread.collected_dimensions ?? 'NOT YET COLLECTED'}\nPhone: ${thread.collected_phone ?? 'NOT YET COLLECTED'}\nCurrent step: ${thread.qualification_step ?? 1}\nQualification complete: ${thread.qualification_complete ? 'YES' : 'NO'}\n\nEMAIL MESSAGE HISTORY:\n${historyStr || '(No prior messages)'}`;\n\nreturn [{ json: { userMessage, thread_id: thread.id, gmail_thread_id: thread.gmail_thread_id, classification: thread.classification, qualification_step: thread.qualification_step } }];"
+      },
+      "id": "6a4fb6a3-ff54-49c6-9363-aa3f71c69c56",
+      "name": "Build AI Prompt (Email)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse & Validate Anthropic AI Response\nconst convData = $node['Build OpenAI Message1'].json;\nlet aiOutput;\n\ntry {\n  // Get raw content from Anthropic node output\n  let rawContent = $input.first().json.content?.[0]?.text || '';\n\n  // Strip markdown code fences (```json ... ```)\n  if (typeof rawContent === 'string') {\n    rawContent = rawContent.replace(/```json\\n?|\\n?```/g, '').trim();\n  }\n\n  // Check if already an object or needs parsing\n  if (typeof rawContent === 'object' && rawContent !== null) {\n    aiOutput = rawContent;\n  } else {\n    aiOutput = JSON.parse(rawContent);\n  }\n\n  // Validate required structure\n  if (!aiOutput.messages || !Array.isArray(aiOutput.messages) || aiOutput.messages.length === 0) {\n    throw new Error('Missing or empty messages array');\n  }\n  if (typeof aiOutput.currentStep === 'undefined') {\n    aiOutput.currentStep = convData.qualification_step || 1;\n  }\n  if (typeof aiOutput.qualificationComplete === 'undefined') {\n    aiOutput.qualificationComplete = false;\n  }\n  if (!aiOutput.extracted) {\n    aiOutput.extracted = {};\n  }\n\n} catch (e) {\n  aiOutput = {\n    messages: ['Er is een fout opgetreden. Probeer het opnieuw.'],\n    extracted: {},\n    currentStep: convData.qualification_step || 1,\n    qualificationComplete: false,\n    respond: true\n  };\n}\n\nreturn [{\n  json: {\n    // AI response fields\n    ai_messages:            aiOutput.messages,\n    ai_reply:               aiOutput.messages[0],\n    respond:                aiOutput.respond ?? true,\n\n    // Extracted from this turn\n    extracted_address:      aiOutput.extracted.address    || null,\n    extracted_wishes:       aiOutput.extracted.wishes     || null,\n    extracted_dimensions:   aiOutput.extracted.dimensions || null,\n    extracted_hasPhoto:     aiOutput.extracted.phone   || false,\n    extracted_email:        aiOutput.extracted.email      || null,\n\n    // Step tracking\n    currentStep:            aiOutput.currentStep,\n    qualificationComplete:  aiOutput.qualificationComplete,\n\n    // Pass-through conversation context\n    conversation_id:        convData.conversation_id,\n    contact_id:             convData.contact_id,\n    thread_id:       convData.whatsapp_chat_id,\n    collected_address:      convData.collected_address,\n    collected_wishes:       convData.collected_wishes,\n    collected_dimensions:   convData.collected_dimensions,\n    collected_email:        convData.collected_email,\n    collected_photos:       convData.collected_photos\n  }\n}];"
+      },
+      "id": "1e8c4618-85a0-49bd-8d48-74fd68b69fa8",
+      "name": "Parse Email AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1472,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "=eq.{{ $json.thread_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ pending_reply: false, qualification_step: $json.currentStep, qualification_complete: $json.qualificationComplete }) }}",
+        "options": {}
+      },
+      "id": "61de0bbf-11b1-4572-9d88-390b90c6a38e",
+      "name": "Update Email Thread State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1248,
+        496
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ conversation_id: $node['Parse AI Response1'].json.conversation_id, direction: 'outbound', content: $node['Parse AI Response1'].json.ai_reply, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "d9fb987e-8bea-4827-b230-32beb1ab80e6",
+      "name": "Save Outbound Message1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        496
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-just-qualified-1b",
+              "leftValue": "={{ $node['Parse AI Response1'].json.qualificationComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4155a2f4-a7bc-46f2-b6a7-4374a54f9d11",
+      "name": "IF — Just Qualified?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -128,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://niekbevisible.app.n8n.cloud/webhook/send-qualification-summary",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ conversationId: $node['Parse AI Response1'].json.conversation_id }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6cd526ea-50be-4fcb-a192-db297362d313",
+      "name": "Trigger Workflow 3 — Send Summary1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "2722843a-b3a4-4da9-83fc-db6fc0c2a48a",
+      "name": "No Operation — End1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        96,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5a62a98c-65d4-4080-87cd-60721115ade0",
+              "leftValue": "={{ $json.respond }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1696,
+        496
+      ],
+      "id": "379059f0-2a88-4370-b5d6-a84a4bee6834",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-opus-4-5-20251101",
+          "mode": "list",
+          "cachedResultName": "claude-opus-4-5-20251101"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.userMessage }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "options": {
+          "system": "=You are a friendly customer service assistant for a professional landscaping and gardening company. Your job is to qualify potential customers by collecting 5 specific pieces of information in strict order. After qualification is complete, you switch to a friendly general chatbot mode.  ## YOUR PERSONALITY - Warm, professional, enthusiastic about garden projects - Natural, conversational — never robotic - Each response STARTS with a brief varied acknowledgment of what the customer said - Keep responses SHORT: maximum 2-3 sentences  ## LANGUAGE RULES — READ THIS FIRST BEFORE EVERY RESPONSE - Detect the language of the customer's FIRST message in this conversation and lock it in for the entire conversation - If the first message is in Dutch → respond in Dutch for every single message, no exceptions - If the first message is in English → respond in English for every single message, no exceptions - If the first message is ambiguous (e.g. \"hi\", \"hello\", \"hoi\") → default to English - NEVER switch language mid-conversation, even if the customer switches language - NEVER mix languages in a single response — every word must be in the locked language - The fixed Dutch responses in these instructions (e.g. photo acknowledgment, price response) must be translated to English if the conversation is in English, and kept in Dutch if the conversation is in Dutch - The language of the customer's latest message does NOT change your language — only the first message determines the language for the whole conversation  ## STRICT QUALIFICATION STEPS — COLLECT IN THIS ORDER ONLY Step 1: ADDRESS — Ask for the property address Step 2: WISHES — Ask what they want done to their garden/property Step 3: DIMENSIONS — Ask for dimensions as LENGTH x WIDTH in meters (e.g. \"8x6 meter\") Step 4: PHOTOS — Ask them to send photos of the current situation Step 5: EMAIL — Ask for their email address. Frame it as: \"Can you also share your email address? Then we have all the data to make you a quote/offer.\"  ## POST-QUALIFICATION MODE When the COLLECTED DATA shows \"Qualification complete: YES\", ALL 5 steps have already been collected. Switch to friendly general conversation mode: - Be warm, helpful, and conversational — you are now a friendly assistant - NEVER discuss pricing, costs, quotes, estimates, or rates - NEVER discuss scheduling, planning, timelines, or appointment dates - If the customer asks about price or planning, explain warmly that a colleague will discuss all of this during the phone call appointment that has been scheduled - You CAN answer general gardening questions, chat casually, or help with any other general queries - Keep responses short and friendly (1-2 sentences) - Do NOT re-ask for any information — everything has already been collected - In the JSON output, always set qualificationComplete to true and currentStep to 6 - Still output the same JSON format with extracted values as null  ## CRITICAL RULES 1. NEVER ask for something already provided — check collected data above carefully 2. NEVER ask for a phone number — the phone is already known from WhatsApp 3. DIMENSIONS: only accept Length x Width format. If customer says \"48m2\" respond in their locked language asking for L×W format. Do not advance until valid LxW given. 4. PHOTOS: when customer sends image (has_attachment=true), acknowledge warmly in the locked language. 5. PHOTOS REFUSAL: If the customer says they don't want to send photos, can't send photos, or wants to skip them — do NOT accept this and do NOT move on. First explain why photos are needed, then ask again. Use this structure: acknowledge their hesitation warmly → explain that photos help us make an accurate estimate of the work needed → ask once more. Example (English): \"No worries at all! The reason we ask for photos is so our team can make an accurate estimate of the work needed — without them it's really hard for us to give you a fair quote. Could you perhaps take a quick snap with your phone?\" Example (Dutch): \"Geen probleem! De reden dat we foto's vragen is zodat we een nauwkeurige schatting kunnen maken van het werk — zonder foto's is het lastig om een eerlijke offerte te geven. Zou u misschien even een foto kunnen maken met uw telefoon?\" Only advance to Step 5 when has_attachment=true. 6. PRICE QUESTIONS: respond in the locked language explaining you will provide a fair price after visiting in person. 7. OFF-TOPIC questions: redirect warmly back to qualification in the locked language (unless qualification is already complete — then answer freely) 8. If customer gives multiple pieces of info at once — accept ALL of them, skip those steps, continue from next uncollected step 9. Vary your acknowledgment phrases — never repeat the same opener twice 10. IMPORTANT: The customer may send multiple messages in quick succession. Treat all NEW MESSAGES listed below as ONE combined response.  ## VALID DIMENSION FORMATS (accept these) \"8x6\", \"8 bij 6\", \"8 meter bij 6 meter\", \"8x6 meter\", \"8 x 6 m\" Normalize ALL to: \"8x6 meter\"  ## DECIDING WHETHER TO RESPOND Analyze the last outbound message (what the bot asked) and the latest inbound message(s) to decide if the customer seems finished responding or might still be typing more.  Set \"respond\": false WHEN: - The last outbound message asked a question, AND the latest inbound message(s) seem like an incomplete or partial answer — for example, a very short acknowledgment like \"ok\", \"yes\", \"moment\", \"one sec\", \"hold on\", or any message that does not actually answer what was asked yet.  Set \"respond\": true WHEN: - The inbound message(s) provide a clear, complete answer to what was last asked - The customer asks a question back - The customer provides any concrete information (address, wishes, dimensions, phone, photo) - There is no clear outbound question to wait on  When in doubt, set \"respond\": true — it is better to reply than to silently wait.  ## RESPOND WITH JSON ONLY — NO OTHER TEXT: {   \"messages\": [\"your single response message here\"],   \"extracted\": {     \"address\": \"extracted address or null\",     \"wishes\": \"extracted wishes or null\",     \"dimensions\": \"normalized LxW or null\",     \"hasPhoto\": true or false,     \"email\": \"extracted email or null\"   },   \"currentStep\": 1,   \"qualificationComplete\": false,   \"respond\": true }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        -2272,
+        496
+      ],
+      "id": "45c0c771-c2cc-41b5-af9d-20af16ea2cbd",
+      "name": "Message a model1",
+      "credentials": {
+        "anthropicApi": {
+          "id": "Uxj5WgLtWNZRaMuE",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const rawText = item.json.content[0].text;\n\n  // Strip markdown code fences (```json ... ```)\n  const cleaned = rawText.replace(/```json\\n?|\\n?```/g, \"\").trim();\n\n  // Parse the JSON string\n  const parsed = JSON.parse(cleaned);\n\n  // Extract the respond status\n  item.json.respond = parsed.respond;\n\n  // Optional: extract other fields too\n  item.json.messages        = parsed.messages;\n  item.json.currentStep     = parsed.currentStep;\n  item.json.qualificationComplete = parsed.qualificationComplete;\n  item.json.extracted       = parsed.extracted;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        496
+      ],
+      "id": "647614ea-38a0-48fe-8f63-73fd3b1ea177",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "subject": "Re: Uw Tuin Project",
+        "message": "={{ $node['Parse Email AI Response'].json.ai_reply }}",
+        "threadId": "={{ $node['Parse Email AI Response'].json.gmail_thread_id }}",
+        "options": {}
+      },
+      "id": "7abad276-afe2-4dd2-89b8-52b81ab12d43",
+      "name": "Send Gmail Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        400
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HHZP2v5q3JOlG1Zw",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger — Every 60s": {
+      "main": [
+        [
+          {
+            "node": "Find Pending Email Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Pending Email Threads": {
+      "main": [
+        [
+          {
+            "node": "Filter — Ready Email Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter — Ready Email Threads": {
+      "main": [
+        [
+          {
+            "node": "Get Email Message History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email Message History": {
+      "main": [
+        [
+          {
+            "node": "Build AI Prompt (Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build AI Prompt (Email)": {
+      "main": [
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Parse Email AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Email AI Response": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Gmail Reply": {
+      "main": [
+        [
+          {
+            "node": "Update Email Thread State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a6103a2320145fe974541bf1a458566a4cb3c085416cbbe1576bf2fa5e798d37"
+  }
+}

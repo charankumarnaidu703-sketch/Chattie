@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { format } from 'date-fns';
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { nl } from 'date-fns/locale';
-import { Mail, Trash2, Loader2 } from 'lucide-react';
+import { Mail, Search, Trash2, Loader2, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/EmptyState';
+import { StatusBadge, StatusDot } from '@/components/StatusBadge';
+import { QualificationProgress } from '@/components/QualificationProgress';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import type { EmailThread } from '@/lib/types';
 
@@ -13,24 +16,65 @@ interface EmailsListClientProps {
   initialEmails: EmailThread[];
 }
 
-const classificationMap: Record<string, { label: string; color: string }> = {
-  CUSTOMER: { label: 'Klant', color: 'text-primary bg-primary/10 border-primary/20' },
-  SUPPLIER: { label: 'Leverancier', color: 'text-tertiary bg-tertiary/10 border-tertiary/20' },
-  INTERNAL: { label: 'Intern', color: 'text-on-surface-variant bg-surface-container-high border-outline-variant/50' },
-  SPAM: { label: 'Spam', color: 'text-error bg-error/10 border-error/20' },
-  OTHER: { label: 'Overig', color: 'text-outline bg-outline/10 border-outline/20' },
-};
-
-function getClassificationDetails(c: string) {
-  return classificationMap[c] || classificationMap.OTHER;
+function getTimeLabel(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isToday(d)) return format(d, 'HH:mm');
+  if (isYesterday(d)) return 'Gisteren';
+  return formatDistanceToNow(d, { locale: nl, addSuffix: false });
 }
+
+const TABS = [
+  { key: 'alle', label: 'Alle' },
+  { key: 'nieuw', label: 'Nieuw' },
+  { key: 'actief', label: 'Actief' },
+  { key: 'qualified', label: 'Klaar' },
+];
 
 export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
   const [emails, setEmails] = useState<EmailThread[]>(initialEmails);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('actief'); // Default to target actionable
+  const [showSearch, setShowSearch] = useState(false);
+  
   const [deleteTarget, setDeleteTarget] = useState<EmailThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const supabase = getSupabaseClient();
+
+  // Sort by processed_at desc
+  const sortedEmails = [...emails].sort((a, b) => 
+    new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime()
+  );
+
+  const filtered = useMemo(() => {
+    let result = sortedEmails;
+    
+    // Tab filters
+    switch (activeTab) {
+      case 'nieuw':
+        result = result.filter((e) => e.status === 'new');
+        break;
+      case 'actief':
+        result = result.filter((e) => e.status === 'active' || e.status === 'new');
+        break;
+      case 'qualified':
+        result = result.filter((e) => e.status === 'qualified');
+        break;
+    }
+    
+    // Text search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((e) => {
+        const name = e.sender_name?.toLowerCase() ?? '';
+        const emailAddress = e.sender_email?.toLowerCase() ?? '';
+        const subject = e.subject?.toLowerCase() ?? '';
+        return name.includes(q) || emailAddress.includes(q) || subject.includes(q);
+      });
+    }
+    
+    return result;
+  }, [sortedEmails, activeTab, searchQuery]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
@@ -46,7 +90,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
 
       setEmails((prev) => prev.filter((e) => e.id !== deleteTarget.id));
       setDeleteTarget(null);
-      toast.success('Email verwijderd');
+      toast.success('Email thread verwijderd');
     } catch {
       toast.error('Kon email niet verwijderen. Probeer opnieuw.');
     } finally {
@@ -55,67 +99,134 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="font-headline font-extrabold text-2xl tracking-tight text-on-background flex items-center gap-2">
-          <Mail className="h-6 w-6 text-tertiary" />
-          E-mails
+      <header className="flex justify-between items-center">
+        <h1 className="font-headline font-bold text-2xl tracking-tight text-primary flex items-center gap-2">
+          <Mail className="h-6 w-6" />
+          Email Leads
         </h1>
-        <p className="font-label text-xs text-outline mt-1">
-          Automatisch verwerkte en geclassificeerde e-mails. ({emails.length})
-        </p>
-      </div>
+        <button
+          onClick={() => setShowSearch((s) => !s)}
+          className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
+        >
+          <Search className="h-5 w-5 text-primary" />
+        </button>
+      </header>
 
+      {/* Tonal Separation */}
       <div className="bg-surface-container-low h-[1px] w-full" />
 
-      {/* Email list */}
-      {emails.length === 0 ? (
+      {/* Search Bar */}
+      {showSearch && (
+        <div className="animate-slide-in">
+          <input
+            type="text"
+            placeholder="Zoek op naam, email of onderwerp..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20"
+            autoFocus
+          />
+        </div>
+      )}
+
+      {/* Filter Tabs */}
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={\`px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 \${
+              activeTab === tab.key
+                ? 'bg-primary text-on-primary'
+                : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high'
+            }\`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
         <EmptyState
-          message="Nog geen e-mails verwerkt"
-          subMessage="Zodra er nieuwe e-mails binnenkomen, verschijnen ze hier."
+          message={searchQuery ? 'Geen resultaten gevonden' : 'Geen e-mails in deze categorie'}
+          subMessage={searchQuery ? \`Geen e-mails gevonden voor "\${searchQuery}"\` : 'Klant emails verschijnen hier automatisch.'}
         />
       ) : (
-        <div className="space-y-3">
-          {emails.map((email) => {
-            const classInfo = getClassificationDetails(email.classification);
+        <div className="space-y-3 pb-8">
+          {filtered.map((thread) => {
+            const step = thread.qualification_step || 1;
+            const statusColor = 
+              thread.status === 'qualified' ? 'tertiary' : 
+              thread.status === 'closed' ? 'secondary' : 'primary';
+
             return (
-              <div
-                key={email.id}
-                className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 group active:scale-[0.98] transition-transform"
-              >
-                <div className="flex items-start justify-between">
-                  {/* Email info */}
-                  <div className="flex-1 min-w-0 pr-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${classInfo.color}`}>
-                        {classInfo.label}
-                      </span>
-                      <span className="font-label text-[11px] text-outline tracking-wider">
-                        {format(new Date(email.processed_at), 'd MMM HH:mm', { locale: nl })}
+              <div key={thread.id} className="relative group">
+                <Link href={\`/emails/\${thread.id}\`} className="block relative z-0">
+                  <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 active:scale-[0.98] transition-transform">
+                    {/* Name + Time */}
+                    <div className="flex justify-between items-start mb-2 pr-10">
+                      <div className="flex items-center gap-3">
+                        <StatusDot status={thread.status || 'active'} />
+                        <span className="font-headline font-bold text-on-background truncate max-w-[200px]">
+                          {thread.sender_name || thread.sender_email || 'Onbekend'}
+                        </span>
+                        {/* Bot indicator badge */}
+                        {thread.bot_enabled && (
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-[10px] font-bold uppercase tracking-wider">
+                            <Bot className="h-3 w-3" />
+                            Bot
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-label text-on-surface-variant text-xs flex-shrink-0">
+                        {getTimeLabel(thread.last_reply_at || thread.processed_at)}
                       </span>
                     </div>
 
-                    <h3 className="font-headline font-bold text-on-background text-base mb-1 truncate">
-                      {email.subject || '(Geen onderwerp)'}
+                    {/* Subject Line */}
+                    <h3 className="font-headline font-bold text-sm text-on-background/80 mb-3 truncate">
+                      {thread.subject || '(Geen onderwerp)'}
                     </h3>
-                    <p className="font-label text-xs text-on-surface-variant truncate">
-                      <span className="font-bold text-on-background">{email.sender_name || email.sender_email || 'Onbekend'}</span>
-                      {email.sender_name && email.sender_email && <span className="opacity-70"> · {email.sender_email}</span>}
-                    </p>
-                  </div>
 
-                  {/* Delete button (shows on hover desktop, always mobile) */}
-                  <div className="flex-shrink-0">
-                    <button
-                      onClick={() => setDeleteTarget(email)}
-                      className="p-3 bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
-                      aria-label="Verwijderen"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <StatusBadge status={thread.status || 'active'} />
+                    </div>
+
+                    {/* Step Progress */}
+                    {thread.classification === 'CUSTOMER' && (
+                      <div className="mb-4">
+                        <QualificationProgress
+                          currentStep={step}
+                          color={statusColor}
+                        />
+                      </div>
+                    )}
+
+                    {/* Body Preview */}
+                    {thread.body_preview && (
+                      <p className="text-on-surface-variant/80 text-sm truncate font-body leading-relaxed">
+                        {thread.body_preview}
+                      </p>
+                    )}
                   </div>
-                </div>
+                </Link>
+
+                {/* Delete Button overlaid */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteTarget(thread);
+                  }}
+                  className="absolute top-4 right-4 z-10 p-2.5 bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                  aria-label="Verwijderen"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             );
           })}
@@ -139,7 +250,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                 E-mail verwijderen?
               </h3>
               <p className="font-body text-sm text-on-surface-variant mt-2 leading-relaxed">
-                Dit verwijdert <strong>"{deleteTarget.subject || '(Geen onderwerp)'}"</strong> permanent.
+                Dit verwijdert "{deleteTarget.subject || '(Geen onderwerp)'}" permanent.
               </p>
 
               <div className="flex gap-3 mt-6">

@@ -495,11 +495,11 @@
         },
         "simplify": false,
         "options": {
-          "system": "=You write draft email responses for a landscaping company owner to review and send.\\n\\n{{ $json.knowledgeBlock }}\\n\\n## YOUR TASK\\nWrite a warm, professional response that:\\n1. Opens by thanking them by name for their message\\n2. Addresses their specific question or request using the company knowledge above\\n3. Asks for ANY information missing from this list:\\n   - Phone number (ALWAYS ask — this is crucial for scheduling a call)\\n   - Dimensions of the area (Length x Width in meters)\\n   - Photos of the current situation\\n   - Full address of the property\\n4. Mentions we are happy to visit for a free quote\\n5. Ends with the company signature from the knowledge base above\\n\\n## RULES\\n- Never quote a specific price — only general indications from knowledge base\\n- Never promise a specific date\\n- Language: match the customer (Dutch or English)\\n- Length: 150-250 words\\n- Format: plain HTML paragraphs only\\n- If knowledge base is empty, write a professional but general response\\n\\nOutput ONLY the email body HTML. No JSON, no subject line."
+          "system": "=You write email responses for a landscaping company.\\n\\n{{ $json.knowledgeBlock }}\\n\\n## YOUR TASK\\nWrite a warm, professional reply directly to the customer that:\\n1. Opens by thanking them by name\\n2. Answers their specific question using company knowledge\\n3. Asks for their phone number to discuss the project (crucial!)\\n\\nOutput ONLY the email body text. Keep it under 150 words."
         }
       },
       "id": "claude-draft-001",
-      "name": "Claude — Generate Draft",
+      "name": "Claude — Generate First Reply",
       "type": "@n8n/n8n-nodes-langchain.anthropic",
       "typeVersion": 1,
       "position": [
@@ -543,7 +543,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ gmail_thread_id: $node['Gmail — Create Draft Reply'].json.message.threadId, gmail_message_id: $node['Gmail — Create Draft Reply'].json.message.id, classification: 'CUSTOMER', subject: $node['Prepare Draft Data'].json.subject, sender_email:$node['Prepare Draft Data'].json.senderEmail , sender_name: $node['Prepare Draft Data'].json.senderName, draft_created: true, draft_gmail_id: $node['Gmail — Create Draft Reply'].json.id || null, processed_at: new Date().toISOString() }) }}\n\n",
+        "jsonBody": "={{ JSON.stringify({ \n  gmail_thread_id: $node['Parse Classification'].json.threadId, \n  gmail_message_id: $node['Parse Classification'].json.messageId, \n  classification: 'CUSTOMER', \n  subject: $node['Prepare Draft Data'].json.subject, \n  sender_email: $node['Prepare Draft Data'].json.senderEmail, \n  sender_name: $node['Prepare Draft Data'].json.senderName, \n  draft_created: false, \n  status: 'active',\n  bot_enabled: true,\n  qualification_step: 1,\n  processed_at: new Date().toISOString() \n}) }}",
         "options": {
           "response": {
             "response": {
@@ -553,7 +553,7 @@
         }
       },
       "id": "26e0e8dc-c68d-4657-a2ab-fe08a850c036",
-      "name": "Save Email Thread — Customer (with Draft)",
+      "name": "Save Email Thread — Customer (Start Bot)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -712,13 +712,14 @@
     },
     {
       "parameters": {
-        "resource": "draft",
+        "resource": "message",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.draftBody }}",
-        "options": {}
+        "options": {},
+        "operation": "send"
       },
       "id": "fdb71b74-9804-404d-ae73-22252e10074a",
-      "name": "Gmail — Create Draft Reply",
+      "name": "Gmail — Send First Reply",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
@@ -756,6 +757,41 @@
       ],
       "id": "2a79e109-6769-4982-a300-b36e3d69de0f",
       "name": "Code1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ thread_id: $node['Save Email Thread — Customer (Start Bot)'].json[0].id, gmail_message_id: $node['Gmail — Send First Reply'].json.id, direction: 'outbound', content: $node['Prepare Draft Data'].json.draftBody, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "dfa9b194-c2d7-4d14-82c3-2b863e248ca2",
+      "name": "Save Outbound Email Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3300,
+        144
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "connections": {
@@ -1078,6 +1114,17 @@
         [
           {
             "node": "Prepare Draft Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Email Thread — Customer (Start Bot)": {
+      "main": [
+        [
+          {
+            "node": "Save Outbound Email Message",
             "type": "main",
             "index": 0
           }

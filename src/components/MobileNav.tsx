@@ -21,7 +21,7 @@ export function MobileNav() {
       <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_12px_32px_-4px_rgba(11,28,48,0.1)] border border-outline-variant/10 flex justify-around items-center py-2 px-1">
         {navItems.map((item) => {
           const isActive =
-            pathname === item.href || pathname.startsWith(item.href + '/');
+            pathname === item.href || pathname?.startsWith(item.href + '/');
           const Icon = item.icon;
 
           return (
@@ -64,7 +64,7 @@ export function DesktopSidebar() {
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const isActive =
-            pathname === item.href || pathname.startsWith(item.href + '/');
+            pathname === item.href || pathname?.startsWith(item.href + '/');
           const Icon = item.icon;
 
           return (
