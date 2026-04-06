@@ -7,10 +7,13 @@ import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EmailDetailPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+async function EmailContent({ id }: { id: string }) {
   const supabase = await createServerSupabaseClient();
 
-  // Fetch the email thread with contact and messages
   const { data: thread, error } = await supabase
     .from('email_threads')
     .select(`
@@ -20,7 +23,7 @@ export default async function EmailDetailPage({ params }: { params: { id: string
         *
       )
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
   if (error || !thread) {
@@ -28,7 +31,6 @@ export default async function EmailDetailPage({ params }: { params: { id: string
     notFound();
   }
 
-  // Sort messages oldest to newest
   const sortedMessages = [...(thread.email_messages || [])].sort(
     (a, b) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime()
   );
@@ -37,6 +39,12 @@ export default async function EmailDetailPage({ params }: { params: { id: string
     ...thread,
     email_messages: sortedMessages
   };
+
+  return <EmailDetailClient initialThread={threadWithSortedMessages} />;
+}
+
+export default async function EmailDetailPage({ params }: PageProps) {
+  const { id } = await params;
 
   return (
     <div className="h-[calc(100vh-theme(spacing.20))] md:h-[calc(100vh-theme(spacing.8))] max-w-7xl mx-auto flex flex-col pt-4 px-4 md:px-0">
@@ -47,8 +55,9 @@ export default async function EmailDetailPage({ params }: { params: { id: string
           </div>
         }
       >
-        <EmailDetailClient initialThread={threadWithSortedMessages} />
+        <EmailContent id={id} />
       </Suspense>
     </div>
   );
 }
+
