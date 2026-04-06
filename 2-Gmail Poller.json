@@ -712,14 +712,13 @@
     },
     {
       "parameters": {
-        "resource": "message",
+        "resource": "draft",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.draftBody }}",
-        "options": {},
-        "operation": "send"
+        "options": {}
       },
       "id": "fdb71b74-9804-404d-ae73-22252e10074a",
-      "name": "Gmail — Send First Reply",
+      "name": "Gmail — Create First Draft",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
@@ -775,7 +774,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ thread_id: $node['Save Email Thread — Customer (Start Bot)'].json[0].id, gmail_message_id: $node['Gmail — Send First Reply'].json.id, direction: 'outbound', content: $node['Prepare Draft Data'].json.draftBody, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ thread_id: $node['Save Email Thread — Customer (Start Bot)'].json[0].id, gmail_message_id: $node['Gmail — Create First Draft'].json.id || 'draft', direction: 'outbound', content: $node['Prepare Draft Data'].json.draftBody, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
         "options": {}
       },
       "id": "dfa9b194-c2d7-4d14-82c3-2b863e248ca2",

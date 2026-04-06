@@ -144,7 +144,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse & Validate Anthropic AI Response\nconst convData = $node['Build OpenAI Message1'].json;\nlet aiOutput;\n\ntry {\n  // Get raw content from Anthropic node output\n  let rawContent = $input.first().json.content?.[0]?.text || '';\n\n  // Strip markdown code fences (```json ... ```)\n  if (typeof rawContent === 'string') {\n    rawContent = rawContent.replace(/```json\\n?|\\n?```/g, '').trim();\n  }\n\n  // Check if already an object or needs parsing\n  if (typeof rawContent === 'object' && rawContent !== null) {\n    aiOutput = rawContent;\n  } else {\n    aiOutput = JSON.parse(rawContent);\n  }\n\n  // Validate required structure\n  if (!aiOutput.messages || !Array.isArray(aiOutput.messages) || aiOutput.messages.length === 0) {\n    throw new Error('Missing or empty messages array');\n  }\n  if (typeof aiOutput.currentStep === 'undefined') {\n    aiOutput.currentStep = convData.qualification_step || 1;\n  }\n  if (typeof aiOutput.qualificationComplete === 'undefined') {\n    aiOutput.qualificationComplete = false;\n  }\n  if (!aiOutput.extracted) {\n    aiOutput.extracted = {};\n  }\n\n} catch (e) {\n  aiOutput = {\n    messages: ['Er is een fout opgetreden. Probeer het opnieuw.'],\n    extracted: {},\n    currentStep: convData.qualification_step || 1,\n    qualificationComplete: false,\n    respond: true\n  };\n}\n\nreturn [{\n  json: {\n    // AI response fields\n    ai_messages:            aiOutput.messages,\n    ai_reply:               aiOutput.messages[0],\n    respond:                aiOutput.respond ?? true,\n\n    // Extracted from this turn\n    extracted_address:      aiOutput.extracted.address    || null,\n    extracted_wishes:       aiOutput.extracted.wishes     || null,\n    extracted_dimensions:   aiOutput.extracted.dimensions || null,\n    extracted_hasPhoto:     aiOutput.extracted.phone   || false,\n    extracted_email:        aiOutput.extracted.email      || null,\n\n    // Step tracking\n    currentStep:            aiOutput.currentStep,\n    qualificationComplete:  aiOutput.qualificationComplete,\n\n    // Pass-through conversation context\n    conversation_id:        convData.conversation_id,\n    contact_id:             convData.contact_id,\n    thread_id:       convData.whatsapp_chat_id,\n    collected_address:      convData.collected_address,\n    collected_wishes:       convData.collected_wishes,\n    collected_dimensions:   convData.collected_dimensions,\n    collected_email:        convData.collected_email,\n    collected_photos:       convData.collected_photos\n  }\n}];"
+        "jsCode": "// Parse & Validate Anthropic AI Response\nconst convData = $node['Build AI Prompt (Email)'].json;\nlet aiOutput;\n\ntry {\n  let rawContent = $input.first().json.content?.[0]?.text || '';\n\n  if (typeof rawContent === 'string') {\n    rawContent = rawContent.replace(/```json\\n?|\\n?```/g, '').trim();\n  }\n\n  if (typeof rawContent === 'object' && rawContent !== null) {\n    aiOutput = rawContent;\n  } else {\n    aiOutput = JSON.parse(rawContent);\n  }\n\n  if (!aiOutput.messages || !Array.isArray(aiOutput.messages) || aiOutput.messages.length === 0) {\n    throw new Error('Missing or empty messages array');\n  }\n  if (typeof aiOutput.currentStep === 'undefined') {\n    aiOutput.currentStep = convData.qualification_step || 1;\n  }\n  if (typeof aiOutput.qualificationComplete === 'undefined') {\n    aiOutput.qualificationComplete = false;\n  }\n  if (!aiOutput.extracted) {\n    aiOutput.extracted = {};\n  }\n\n} catch (e) {\n  aiOutput = {\n    messages: ['Er is een fout opgetreden. Probeer het opnieuw.'],\n    extracted: {},\n    currentStep: convData.qualification_step || 1,\n    qualificationComplete: false,\n    respond: true\n  };\n}\n\nreturn [{\n  json: {\n    ai_messages:            aiOutput.messages,\n    ai_reply:               aiOutput.messages[0],\n    respond:                aiOutput.respond ?? true,\n\n    extracted_address:      aiOutput.extracted.address    || null,\n    extracted_wishes:       aiOutput.extracted.wishes     || null,\n    extracted_dimensions:   aiOutput.extracted.dimensions || null,\n    extracted_phone:        aiOutput.extracted.phone      || null,\n    extracted_email:        aiOutput.extracted.email      || null,\n\n    currentStep:            aiOutput.currentStep,\n    qualificationComplete:  aiOutput.qualificationComplete,\n\n    thread_id:              convData.thread_id,\n    gmail_thread_id:        convData.gmail_thread_id,\n    collected_address:      aiOutput.extracted.address    || null,\n    collected_wishes:       aiOutput.extracted.wishes     || null,\n    collected_dimensions:   aiOutput.extracted.dimensions || null,\n    collected_phone:        aiOutput.extracted.phone      || null,\n    collected_email:        aiOutput.extracted.email      || null\n  }\n}];"
       },
       "id": "1e8c4618-85a0-49bd-8d48-74fd68b69fa8",
       "name": "Parse Email AI Response",
@@ -193,7 +193,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/messages",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/rest/v1/email_messages",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
@@ -207,7 +207,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ conversation_id: $node['Parse AI Response1'].json.conversation_id, direction: 'outbound', content: $node['Parse AI Response1'].json.ai_reply, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ thread_id: $node['Parse Email AI Response'].json.thread_id, gmail_message_id: 'bot-' + Date.now(), direction: 'outbound', content: $node['Parse Email AI Response'].json.ai_reply, sent_by_bot: true, sent_at: new Date().toISOString() }) }}",
         "options": {}
       },
       "id": "d9fb987e-8bea-4827-b230-32beb1ab80e6",
@@ -237,7 +237,7 @@
           "conditions": [
             {
               "id": "condition-just-qualified-1b",
-              "leftValue": "={{ $node['Parse AI Response1'].json.qualificationComplete }}",
+              "leftValue": "={{ $node['Parse Email AI Response'].json.qualificationComplete }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -264,7 +264,7 @@
         "url": "=https://niekbevisible.app.n8n.cloud/webhook/send-qualification-summary",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ conversationId: $node['Parse AI Response1'].json.conversation_id }) }}",
+        "jsonBody": "={{ JSON.stringify({ conversationId: $node['Parse Email AI Response'].json.thread_id }) }}",
         "options": {
           "response": {
             "response": {
@@ -377,20 +377,18 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "send",
+        "resource": "draft",
         "subject": "Re: Uw Tuin Project",
         "message": "={{ $node['Parse Email AI Response'].json.ai_reply }}",
-        "threadId": "={{ $node['Parse Email AI Response'].json.gmail_thread_id }}",
         "options": {}
       },
       "id": "7abad276-afe2-4dd2-89b8-52b81ab12d43",
-      "name": "Send Gmail Reply",
+      "name": "Create Gmail Draft Reply",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        0,
-        400
+        -576,
+        496
       ],
       "credentials": {
         "gmailOAuth2": {
@@ -471,6 +469,17 @@
       "main": [
         [
           {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
             "node": "Parse Email AI Response",
             "type": "main",
             "index": 0
@@ -482,18 +491,58 @@
       "main": [
         [
           {
-            "node": "Send Gmail Reply",
+            "node": "Update Email Thread State",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Gmail Reply": {
+    "Update Email Thread State": {
       "main": [
         [
           {
-            "node": "Update Email Thread State",
+            "node": "Save Outbound Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Outbound Message1": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft Reply": {
+      "main": [
+        [
+          {
+            "node": "IF — Just Qualified?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Just Qualified?1": {
+      "main": [
+        [
+          {
+            "node": "Trigger Workflow 3 — Send Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation — End1",
             "type": "main",
             "index": 0
           }
