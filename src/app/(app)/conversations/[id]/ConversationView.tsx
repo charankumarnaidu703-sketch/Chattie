@@ -381,7 +381,9 @@ export function ConversationView({
           <SheetHeader>
             <SheetTitle>Lead informatie</SheetTitle>
           </SheetHeader>
-          <InfoPanel conversation={conversation} contact={contact} />
+          <div className="overflow-y-auto max-h-[65vh] -mx-2 px-2 pb-4">
+            <InfoPanel conversation={conversation} contact={contact} />
+          </div>
         </SheetContent>
       </Sheet>
     </div>
