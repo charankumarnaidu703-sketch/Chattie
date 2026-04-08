@@ -68,7 +68,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst results = [];\nconst now = new Date();\nconst DEBOUNCE_SECONDS = 300; // 5 mins for email\n\nfor (const item of items) {\n  const data = item.json;\n  if (!data.pending_reply) continue;\n  \n  const pendingSince = new Date(data.last_reply_at || Date.now());\n  const ageSeconds = (now.getTime() - pendingSince.getTime()) / 1000;\n  \n  if (ageSeconds >= DEBOUNCE_SECONDS) {\n    results.push({ json: data });\n  }\n}\nreturn results;"
+        "jsCode": "const items = $input.all();\nconst results = [];\nconst now = new Date();\nconst DEBOUNCE_SECONDS = 300; // 5 mins for email\n\nfor (const item of items) {\n  const data = item.json;\n  if (!data.pending_reply) continue;\n  \n  // If last_reply_at is null, this is a brand-new thread — respond immediately\n  if (!data.last_reply_at) {\n    results.push({ json: data });\n    continue;\n  }\n  \n  const pendingSince = new Date(data.last_reply_at);\n  const ageSeconds = (now.getTime() - pendingSince.getTime()) / 1000;\n  \n  if (ageSeconds >= DEBOUNCE_SECONDS) {\n    results.push({ json: data });\n  }\n}\nreturn results;"
       },
       "id": "626b9e32-3005-45dd-a46a-96f87a7162b1",
       "name": "Filter — Ready Email Threads",
