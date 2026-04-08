@@ -406,10 +406,14 @@ function parseMediaUrls(mediaUrl: string | null): string[] {
 
 export function getDirectImageUrl(url: string | null | undefined): string {
   if (!url) return '';
-  const driveRegex = /drive\.google\.com\/(?:file\/d\/|open\?id=)([-\w]+)/;
+  // Supabase Storage public URLs work directly as img src
+  if (url.includes('supabase.co/storage/')) {
+    return url;
+  }
+  // Legacy: Google Drive URLs need transformation
+  const driveRegex = /drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?export=view&id=)([-\w]+)/;
   const match = url.match(driveRegex);
   if (match && match[1]) {
-    // Return the preview link for Google Drive, which embeds reliably in iframes
     return `https://drive.google.com/file/d/${match[1]}/preview`;
   }
   return url;

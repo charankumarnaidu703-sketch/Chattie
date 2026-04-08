@@ -606,32 +606,46 @@
     },
     {
       "parameters": {
-        "name": "={{$binary.data.fileName}}",
-        "driveId": {
-          "__rl": true,
-          "mode": "list",
-          "value": "My Drive"
+        "method": "PUT",
+        "url": "=https://rifktjxmadzfrdclxpfz.supabase.co/storage/v1/object/lead-photos/{{ $json.conversation_id || 'unknown' }}/{{ Date.now() }}_{{ $binary.data.fileName || 'photo.jpg' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "contentType": "binaryData",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "={{ $binary.data.mimeType || 'image/jpeg' }}"
+            },
+            {
+              "name": "x-upsert",
+              "value": "true"
+            }
+          ]
         },
-        "folderId": {
-          "__rl": true,
-          "mode": "list",
-          "value": "root",
-          "cachedResultName": "/ (Root folder)"
-        },
-        "options": {}
+        "sendBody": true,
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
       },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         -2864,
         1264
       ],
       "id": "5db86ff2-0089-4ee0-a203-79aeab5be454",
-      "name": "Upload file1",
+      "name": "Upload to Supabase Storage",
       "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "70Pt8HIDLQ6KXk0Y",
-          "name": "Charan Gdrive"
+        "supabaseApi": {
+          "id": "I1AKQYGeNizcWsiI",
+          "name": "Supabase account"
         }
       }
     },
@@ -642,7 +656,7 @@
             {
               "id": "a141f826-ac3e-4ab6-88a5-cafc909d5bcc",
               "name": "url",
-              "value": "={{ 'https://drive.google.com/uc?export=view&id=' +$('Upload file1').item.json.id }}",
+              "value": "={{ 'https://rifktjxmadzfrdclxpfz.supabase.co/storage/v1/object/public/lead-photos/' + $json.Key }}",
               "type": "string"
             }
           ]
@@ -694,39 +708,15 @@
       }
     },
     {
-      "parameters": {
-        "resource": "folder",
-        "operation": "share",
-        "folderNoRootId": {
-          "__rl": true,
-          "value": "={{ $json.id }}",
-          "mode": "id"
-        },
-        "permissionsUi": {
-          "permissionsValues": {
-            "role": "reader",
-            "type": "anyone",
-            "allowFileDiscovery": true
-          }
-        },
-        "options": {
-          "transferOwnership": false
-        }
-      },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
       "position": [
         -2672,
         1264
       ],
       "id": "93dbd99c-e433-4833-825a-36f3c8ad2491",
-      "name": "Share folder",
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "70Pt8HIDLQ6KXk0Y",
-          "name": "Charan Gdrive"
-        }
-      }
+      "name": "NoOp — Placeholder"
     }
   ],
   "connections": {
@@ -938,18 +928,18 @@
       "main": [
         [
           {
-            "node": "Upload file1",
+            "node": "Upload to Supabase Storage",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Upload file1": {
+    "Upload to Supabase Storage": {
       "main": [
         [
           {
-            "node": "Share folder",
+            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
@@ -972,17 +962,6 @@
         [
           {
             "node": "Update Pending Since1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Share folder": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
