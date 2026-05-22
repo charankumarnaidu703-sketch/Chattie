@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # 🌿 Chattie
 
@@ -357,4 +357,3 @@ This project is proprietary and not licensed for public use.
 *Chattie — AI die voor je klanten zorgt, zodat jij voor de tuin kunt zorgen.*
 
 </div>
-]]>
