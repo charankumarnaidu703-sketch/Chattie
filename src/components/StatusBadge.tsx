@@ -50,7 +50,19 @@ export function StatusDot({ status }: { status: string }) {
     closed: 'bg-outline',
   };
 
+  const labelMap: Record<string, string> = {
+    active: 'Bot actief',
+    paused: 'Bot gepauzeerd',
+    qualified: 'Volledig gekwalificeerd',
+    closed: 'Gesloten',
+  };
+
   return (
-    <div className={cn('w-3 h-3 rounded-full', colorMap[status] || 'bg-outline')} />
+    <div 
+      className={cn('w-3 h-3 rounded-full', colorMap[status] || 'bg-outline')} 
+      title={labelMap[status] || 'Status'}
+    >
+      <span className="sr-only">{labelMap[status] || 'Status'}</span>
+    </div>
   );
 }

@@ -51,6 +51,17 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('alle');
   const [showSearch, setShowSearch] = useState(false);
+  const [displayCount, setDisplayCount] = useState(15);
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    setDisplayCount(15);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setDisplayCount(15);
+  };
 
   const filtered = useMemo(() => {
     let result = conversations;
@@ -76,8 +87,10 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
     return result;
   }, [conversations, activeTab, searchQuery]);
 
+  const visibleItems = useMemo(() => filtered.slice(0, displayCount), [filtered, displayCount]);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fade-in-content">
       {/* Header */}
       <header className="flex justify-between items-center">
         <h1 className="font-headline font-bold text-2xl tracking-tight text-primary">
@@ -85,7 +98,8 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
         </h1>
         <button
           onClick={() => setShowSearch((s) => !s)}
-          className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
+          className="h-11 w-11 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
+          aria-label="Zoeken openen"
         >
           <Search className="h-5 w-5 text-primary" />
         </button>
@@ -101,22 +115,22 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
             type="text"
             placeholder="Zoek op naam of telefoonnummer..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20"
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full bg-surface-container-highest rounded-2xl px-4 py-3.5 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 min-h-[44px]"
             autoFocus
           />
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar py-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 ${
+            onClick={() => handleTabChange(tab.key)}
+            className={`px-6 min-h-[44px] flex items-center justify-center rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer ${
               activeTab === tab.key
-                ? 'bg-primary text-on-primary'
+                ? 'bg-primary text-on-primary shadow-ambient'
                 : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high'
             }`}
           >
@@ -137,14 +151,14 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
         />
       ) : (
         <div className="space-y-3">
-          {filtered.map((conv) => {
+          {visibleItems.map((conv) => {
             const contact = conv.contacts;
             const status = getConversationStatus(conv);
             const lastMessage = conv.messages?.[0];
             const step = conv.qualification_step || 1;
 
             return (
-              <Link key={conv.id} href={`/conversations/${conv.id}`} className="block">
+              <Link key={conv.id} href={`/conversations/${conv.id}`} className="block stagger-item">
                 <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 active:scale-[0.98] transition-transform">
                   {/* Name + Time */}
                   <div className="flex justify-between items-start mb-2">
@@ -182,6 +196,17 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
               </Link>
             );
           })}
+
+          {filtered.length > displayCount && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setDisplayCount((prev) => prev + 15)}
+                className="px-6 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label text-xs font-bold uppercase tracking-wider rounded-full active:scale-95 transition-all min-h-[44px] cursor-pointer"
+              >
+                Laad meer gesprekken ({filtered.length - displayCount} over)
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

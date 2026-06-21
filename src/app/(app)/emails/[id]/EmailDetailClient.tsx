@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { StatusBadge } from '@/components/StatusBadge';
 import { QualificationProgress } from '@/components/QualificationProgress';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { QUALIFICATION_STEPS } from '@/lib/types';
 import type { EmailThreadWithMessages, EmailMessage } from '@/lib/types';
@@ -134,7 +135,11 @@ export function EmailDetailClient({ initialThread }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-auto md:flex-1 md:flex-row overflow-hidden md:rounded-[2rem] bg-surface-container-lowest md:border md:border-outline-variant/10 md:shadow-ambient">
+    <div className="flex flex-col flex-1 h-full w-full fade-in-content">
+      <div className="px-4 pt-4 hidden md:block flex-shrink-0">
+        <Breadcrumbs items={[{ label: 'E-mails', href: '/emails' }, { label: thread.sender_name || thread.sender_email || 'Onbekend' }]} />
+      </div>
+      <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-auto md:flex-1 md:flex-row overflow-hidden md:rounded-[2rem] bg-surface-container-lowest md:border md:border-outline-variant/10 md:shadow-ambient">
 
       {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
@@ -144,7 +149,8 @@ export function EmailDetailClient({ initialThread }: Props) {
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <Link
                 href="/emails"
-                className="p-2 -ml-1 rounded-full hover:bg-surface-container transition-colors active:scale-95 flex-shrink-0"
+                className="h-11 w-11 flex items-center justify-center -ml-1 rounded-full hover:bg-surface-container transition-colors active:scale-95 flex-shrink-0"
+                aria-label="Terug naar e-mails"
               >
                 <ArrowLeft className="h-5 w-5 text-primary" />
               </Link>
@@ -168,7 +174,7 @@ export function EmailDetailClient({ initialThread }: Props) {
                 onClick={toggleBot}
                 disabled={isChangingBot}
                 className={
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-label text-[11px] font-bold uppercase tracking-wider active:scale-95 transition-all border ' +
+                  'bot-toggle-btn flex items-center gap-1.5 px-3 min-h-[44px] rounded-xl font-label text-[11px] font-bold uppercase tracking-wider active:scale-95 transition-all border ' +
                   (isBotEnabled
                     ? 'bg-primary/10 border-primary text-primary'
                     : 'bg-surface-container border-outline-variant/30 text-on-surface-variant')
@@ -185,8 +191,9 @@ export function EmailDetailClient({ initialThread }: Props) {
 
               {/* Info icon — mobile only */}
               <button
-                className="md:hidden p-2 hover:bg-surface-container-low rounded-full transition-colors"
+                className="md:hidden h-11 w-11 flex items-center justify-center hover:bg-surface-container-low rounded-full transition-colors"
                 onClick={() => setInfoSheetOpen(true)}
+                aria-label="Lead details tonen"
               >
                 <Info className="h-5 w-5 text-on-surface-variant" />
               </button>
@@ -292,6 +299,7 @@ export function EmailDetailClient({ initialThread }: Props) {
         </SheetContent>
       </Sheet>
     </div>
+    </div>
   );
 }
 
@@ -393,12 +401,12 @@ function EmailInfoPanel({
 
       {/* Qualification complete badge */}
       {thread.qualification_complete && (
-        <div className="bg-green-50 rounded-xl p-3 border border-green-200">
+        <div className="bg-primary/5 rounded-xl p-3 border border-primary/20">
           <div className="flex items-center gap-2">
             <span className="text-lg">✅</span>
             <div>
-              <p className="text-sm font-medium text-green-800">Kwalificatie voltooid</p>
-              <p className="text-xs text-green-600">
+              <p className="text-sm font-medium text-primary">Kwalificatie voltooid</p>
+              <p className="text-xs text-primary">
                 Alle informatie is verzameld.
               </p>
             </div>

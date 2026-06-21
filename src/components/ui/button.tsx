@@ -7,13 +7,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-green-600 text-white shadow hover:bg-green-700 focus-visible:ring-green-500',
-        destructive: 'bg-red-600 text-white shadow-sm hover:bg-red-700 focus-visible:ring-red-500',
-        outline: 'border border-gray-200 bg-white shadow-sm hover:bg-gray-50 hover:text-gray-900',
-        secondary: 'bg-gray-100 text-gray-900 shadow-sm hover:bg-gray-200',
-        ghost: 'hover:bg-gray-100 hover:text-gray-900',
-        link: 'text-green-600 underline-offset-4 hover:underline',
-        warning: 'bg-orange-500 text-white shadow-sm hover:bg-orange-600 focus-visible:ring-orange-400',
+        default: 'bg-primary text-on-primary shadow hover:bg-primary-container focus-visible:ring-primary',
+        destructive: 'bg-error text-on-error shadow-sm hover:bg-error/90 focus-visible:ring-error',
+        outline: 'border border-outline-variant/30 bg-surface-container-lowest shadow-sm hover:bg-surface-container hover:text-on-background',
+        secondary: 'bg-surface-container text-on-background shadow-sm hover:bg-surface-container-high',
+        ghost: 'hover:bg-surface-container hover:text-on-background',
+        link: 'text-primary underline-offset-4 hover:underline',
+        warning: 'bg-secondary text-on-secondary shadow-sm hover:bg-secondary-container focus-visible:ring-secondary',
       },
       size: {
         default: 'h-10 px-4 py-2',

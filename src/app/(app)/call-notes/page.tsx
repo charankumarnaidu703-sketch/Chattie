@@ -14,7 +14,7 @@ function CallNotesSkeleton() {
       </div>
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border bg-white p-4">
+          <div key={i} className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-4">
             <Skeleton className="h-4 w-48 mb-2" />
             <Skeleton className="h-3 w-64 mb-1" />
             <Skeleton className="h-3 w-32" />
@@ -24,6 +24,8 @@ function CallNotesSkeleton() {
     </div>
   );
 }
+
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 async function CallNotesContent() {
   const supabase = await createServerSupabaseClient();
@@ -58,8 +60,12 @@ async function CallNotesContent() {
 
 export default function CallNotesPage() {
   return (
-    <Suspense fallback={<CallNotesSkeleton />}>
-      <CallNotesContent />
-    </Suspense>
+    <div className="max-w-3xl mx-auto w-full px-6 py-6 pb-28 md:pb-6">
+      <PullToRefresh>
+        <Suspense fallback={<CallNotesSkeleton />}>
+          <CallNotesContent />
+        </Suspense>
+      </PullToRefresh>
+    </div>
   );
 }

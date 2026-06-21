@@ -8,6 +8,8 @@ import { DashboardSkeleton } from '@/components/LoadingSkeleton';
 import { getEventIcon } from '@/lib/types';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+import { WelcomeBanner } from '@/components/WelcomeBanner';
+
 export const dynamic = 'force-dynamic';
 
 function getGreeting() {
@@ -65,7 +67,7 @@ async function DashboardContent() {
   const totalEmails = emailStats.length;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 fade-in-content">
       {/* Editorial Header */}
       <div>
         <h2 className="font-headline font-extrabold text-3xl tracking-tight text-on-background">
@@ -79,8 +81,11 @@ async function DashboardContent() {
       {/* Tonal Separation */}
       <div className="bg-surface-container-low h-[1px] w-full -my-4" />
 
+      {/* Welcome Banner */}
+      <WelcomeBanner />
+
       {/* Stats Bento Grid (2x2) */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] border-t-4 border-primary shadow-ambient">
           <span className="block font-headline font-bold text-3xl text-on-background">{todaysLeads.length}</span>
           <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Leads vandaag</span>
@@ -228,8 +233,10 @@ async function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardContent />
-    </Suspense>
+    <div className="max-w-5xl mx-auto w-full px-6 py-6 pb-28 md:pb-6">
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardContent />
+      </Suspense>
+    </div>
   );
 }

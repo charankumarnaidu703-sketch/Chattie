@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { ConversationsListClient } from './ConversationsListClient';
 import { ConversationListSkeleton } from '@/components/LoadingSkeleton';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +32,12 @@ async function ConversationsContent() {
 
 export default function ConversationsPage() {
   return (
-    <Suspense fallback={<ConversationListSkeleton />}>
-      <ConversationsContent />
-    </Suspense>
+    <div className="max-w-3xl mx-auto w-full px-6 py-6 pb-28 md:pb-6">
+      <PullToRefresh>
+        <Suspense fallback={<ConversationListSkeleton />}>
+          <ConversationsContent />
+        </Suspense>
+      </PullToRefresh>
+    </div>
   );
 }

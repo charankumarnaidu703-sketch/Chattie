@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/EmptyState';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { env } from '@/lib/env';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -149,7 +150,7 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in-content">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -182,11 +183,12 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
 
           {/* Contact selector */}
           <div>
-            <label className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Contact</label>
+            <label htmlFor="contact-select" className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Contact</label>
             <select
+              id="contact-select"
               value={selectedContactId}
               onChange={(e) => setSelectedContactId(e.target.value)}
-              className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background border-none outline-none focus:ring-2 focus:ring-primary/20 appearance-none"
+              className="w-full bg-surface-container-highest rounded-xl px-4 py-3.5 text-sm font-medium text-on-background border-none outline-none focus:ring-2 focus:ring-primary/20 appearance-none min-h-[44px]"
             >
               <option value="">Selecteer een contact...</option>
               {contacts.map((contact) => (
@@ -209,7 +211,7 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
                     key={o.value}
                     type="button"
                     onClick={() => setOutcome(o.value)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border min-h-[44px] cursor-pointer ${
                       isSelected
                         ? `${o.color} ring-1`
                         : 'bg-surface-container-highest text-on-surface-variant border-transparent hover:bg-surface-container-high'
@@ -225,8 +227,9 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
 
           {/* Notes textarea */}
           <div>
-            <label className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Notities</label>
+            <label htmlFor="notes-textarea" className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Notities</label>
             <textarea
+              id="notes-textarea"
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               placeholder="Beschrijf het gesprek..."
@@ -237,8 +240,9 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
 
           {/* Follow-up date */}
           <div>
-            <label className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Vervolgdatum (optioneel)</label>
+            <label htmlFor="followup-date" className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Vervolgdatum (optioneel)</label>
             <input
+              id="followup-date"
               type="date"
               value={followUpDate}
               onChange={(e) => setFollowUpDate(e.target.value)}
@@ -283,7 +287,7 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
             return (
               <div
                 key={note.id}
-                className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 group active:scale-[0.99] transition-transform flex items-start gap-4"
+                className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 group active:scale-[0.99] transition-transform flex items-start gap-4 stagger-item"
               >
                 <div className={`flex-shrink-0 p-3 rounded-xl ${outcomeInfo.color}`}>
                   <OutcomeIcon className="h-5 w-5" />
@@ -322,7 +326,8 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
 
                 <button
                   onClick={() => setDeleteTarget(note)}
-                  className="p-3 bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 flex-shrink-0"
+                  className="h-11 w-11 flex items-center justify-center bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 flex-shrink-0"
+                  aria-label={`Verwijder belnotitie voor ${contactName}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -333,42 +338,17 @@ export function CallNotesClient({ initialNotes, contacts, conversations }: CallN
       )}
 
       {/* Delete confirmation modal */}
-      {deleteTarget && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm transition-opacity"
-            onClick={() => !isDeleting && setDeleteTarget(null)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 px-6 animate-slide-in">
-            <div className="bg-surface-container-lowest rounded-[1.5rem] shadow-elevated max-w-sm w-full p-6 text-center border border-outline-variant/20">
-              <div className="mx-auto w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
-                <Trash2 className="h-6 w-6 text-error" />
-              </div>
-              <h3 className="font-headline font-bold text-lg text-on-background">Notitie verwijderen?</h3>
-              <p className="font-body text-sm text-on-surface-variant mt-2 leading-relaxed">
-                Dit verwijdert deze belnotitie permanent uit de database.
-              </p>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-3 font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container hover:bg-surface-container-high rounded-xl transition-colors disabled:opacity-50"
-                 >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-3 font-label text-xs font-bold uppercase tracking-widest text-on-error bg-error hover:bg-error/90 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isDeleting ? <><Loader2 className="h-4 w-4 animate-spin" /> ...</> : 'Verwijder'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Notitie verwijderen?"
+        description="Dit verwijdert deze belnotitie permanent uit de database."
+        confirmLabel="Verwijder"
+        cancelLabel="Annuleren"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

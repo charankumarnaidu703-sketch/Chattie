@@ -31,6 +31,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { QualificationProgressBar } from '@/components/QualificationProgress';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { env } from '@/lib/env';
 import type { Message, Conversation, Contact } from '@/lib/types';
@@ -253,12 +254,19 @@ export function ConversationView({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-[calc(100dvh-3rem)]">
+    <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-screen fade-in-content">
+      <div className="px-4 pt-4 hidden md:block flex-shrink-0 bg-surface">
+        <Breadcrumbs items={[{ label: 'Gesprekken', href: '/conversations' }, { label: displayName }]} />
+      </div>
       {/* Header */}
       <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex-shrink-0">
         <div className="flex justify-between items-center w-full px-4 py-3 border-b border-outline-variant/10">
           <div className="flex items-center gap-3">
-            <Link href="/conversations" className="p-2 -ml-2 hover:bg-surface-container-low rounded-full transition-colors active:scale-95">
+            <Link
+              href="/conversations"
+              className="h-11 w-11 flex items-center justify-center -ml-2 hover:bg-surface-container-low rounded-full transition-colors active:scale-95"
+              aria-label="Terug naar gesprekken"
+            >
               <ArrowLeft className="h-5 w-5 text-primary" />
             </Link>
             <div className="flex flex-col">
@@ -270,7 +278,7 @@ export function ConversationView({
             <button
               onClick={handleToggleBot}
               disabled={isTogglingBot}
-              className={`px-3 py-1.5 rounded-xl flex items-center gap-2 font-label text-xs font-bold uppercase tracking-wider active:scale-95 transition-all border ${
+              className={`bot-toggle-btn px-3 min-h-[44px] rounded-xl flex items-center gap-2 font-label text-xs font-bold uppercase tracking-wider active:scale-95 transition-all border ${
                 conversation.bot_paused
                   ? 'bg-primary/10 border-primary text-primary'
                   : 'bg-secondary-container/10 border-secondary-container text-secondary'
@@ -285,8 +293,9 @@ export function ConversationView({
               )}
             </button>
             <button
-              className="md:hidden p-2 hover:bg-surface-container-low rounded-full transition-colors"
+              className="md:hidden h-11 w-11 flex items-center justify-center hover:bg-surface-container-low rounded-full transition-colors"
               onClick={() => setInfoSheetOpen(true)}
+              aria-label="Lead details tonen"
             >
               <Info className="h-5 w-5 text-on-surface-variant" />
             </button>
@@ -332,7 +341,8 @@ export function ConversationView({
           {showScrollButton && (
             <button
               onClick={() => scrollToBottom()}
-              className="absolute bottom-20 right-4 md:bottom-8 md:right-8 h-10 w-10 rounded-full bg-surface-container-lowest shadow-ambient flex items-center justify-center hover:bg-surface-container-low transition-colors z-10"
+              className="absolute bottom-20 right-4 md:bottom-8 md:right-8 h-11 w-11 rounded-full bg-surface-container-lowest shadow-ambient flex items-center justify-center hover:bg-surface-container-low transition-colors z-10"
+              aria-label="Naar beneden scrollen"
             >
               <ChevronDown className="h-5 w-5 text-on-surface-variant" />
             </button>
@@ -496,7 +506,7 @@ function InfoPanel({
 
       {/* Contact Details */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">Contactgegevens</h3>
+        <h3 className="text-sm font-semibold text-on-surface-variant">Contactgegevens</h3>
 
         <div className="space-y-2">
           <DetailRow
@@ -505,14 +515,14 @@ function InfoPanel({
             value={displayName}
           />
           <DetailRow
-            icon={<Phone className="h-4 w-4 text-gray-400" />}
+            icon={<Phone className="h-4 w-4 text-outline" />}
             label="WhatsApp"
             value={contact?.phone || '-'}
             isLink={!!contact?.phone}
             href={`tel:${contact?.phone}`}
           />
           <DetailRow
-            icon={<Phone className="h-4 w-4 text-green-500" />}
+            icon={<Phone className="h-4 w-4 text-primary" />}
             label="Telefoon"
             value={conversation.collected_phone || 'Nog niet verzameld'}
             isLink={!!conversation.collected_phone}
@@ -526,11 +536,11 @@ function InfoPanel({
 
       {/* Collected Data */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">Verzamelde gegevens</h3>
+        <h3 className="text-sm font-semibold text-on-surface-variant">Verzamelde gegevens</h3>
 
         <div className="space-y-2">
           <DetailRow
-            icon={<MapPin className="h-4 w-4 text-gray-400" />}
+            icon={<MapPin className="h-4 w-4 text-outline" />}
             label="Adres"
             value={conversation.collected_address || '-'}
           />
@@ -540,12 +550,12 @@ function InfoPanel({
             value={conversation.collected_wishes || '-'}
           />
           <DetailRow
-            icon={<Ruler className="h-4 w-4 text-gray-400" />}
+            icon={<Ruler className="h-4 w-4 text-outline" />}
             label="Afmetingen"
             value={conversation.collected_dimensions || '-'}
           />
           <DetailRow
-            icon={<Camera className="h-4 w-4 text-gray-400" />}
+            icon={<Camera className="h-4 w-4 text-outline" />}
             label="Foto's"
             value={
               photos.length
@@ -554,7 +564,7 @@ function InfoPanel({
             }
             action={
               photos.length > 0 ? (
-                <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} className="h-7 text-xs px-2">
+                <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} className="h-9 sm:h-7 text-xs px-3 sm:px-2">
                   Bekijk foto's
                 </Button>
               ) : undefined
@@ -574,12 +584,12 @@ function InfoPanel({
       {conversation.qualification_complete && (
         <>
           <Separator />
-          <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+          <div className="bg-primary/5 rounded-lg p-3 border border-primary/20">
             <div className="flex items-center gap-2">
               <span className="text-lg">✅</span>
               <div>
-                <p className="text-sm font-medium text-green-800">Kwalificatie voltooid</p>
-                <p className="text-xs text-green-600">
+                <p className="text-sm font-medium text-primary">Kwalificatie voltooid</p>
+                <p className="text-xs text-primary">
                   Alle informatie is verzameld. Bel de klant om een afspraak te maken.
                 </p>
               </div>
@@ -613,11 +623,11 @@ function DetailRow({
       <div className="flex items-start gap-2.5 min-w-0">
         <div className="flex-shrink-0 mt-0.5">{icon}</div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-gray-400">{label}</p>
+          <p className="text-xs text-outline">{label}</p>
           {isLink && href ? (
             <a
               href={href}
-              className={`text-sm font-medium ${highlight ? 'text-green-600 hover:text-green-700' : 'text-blue-600 hover:text-blue-700'
+              className={`text-sm font-medium ${highlight ? 'text-primary hover:text-primary-container' : 'text-tertiary hover:text-tertiary-container'
                 } transition-colors`}
             >
               {value}
@@ -625,8 +635,8 @@ function DetailRow({
           ) : (
             <p
               className={`text-sm ${highlight && value !== 'Nog niet verzameld'
-                ? 'font-semibold text-green-600'
-                : 'text-gray-700'
+                ? 'font-semibold text-primary'
+                : 'text-on-background'
                 }`}
             >
               {value}
@@ -651,8 +661,52 @@ function PhotoGalleryModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchEndY = useRef(0);
+
+  useEffect(() => {
+    // Reset index when opened
+    if (open) setCurrentIndex(0);
+  }, [open]);
 
   if (!open) return null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
+    touchEndX.current = e.targetTouches[0].clientX;
+    touchEndY.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+    touchEndY.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    const diffX = touchStartX.current - touchEndX.current;
+    const diffY = touchStartY.current - touchEndY.current;
+    const threshold = 50;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      if (Math.abs(diffX) > threshold) {
+        if (diffX > 0) {
+          // Swipe Left -> Next
+          setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+        } else {
+          // Swipe Right -> Prev
+          setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+        }
+      }
+    } else {
+      if (diffY < -threshold * 1.5) {
+        // Swipe Down -> Close
+        onOpenChange(false);
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col sm:p-4 animate-in fade-in duration-200">
@@ -665,18 +719,20 @@ function PhotoGalleryModal({
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
+            className="text-white hover:bg-white/20 h-11 w-11 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
             onClick={() => {
               window.open(photos[currentIndex], '_blank');
             }}
+            aria-label="Download foto"
           >
             <Download className="h-5 w-5 sm:h-4 sm:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
+            className="text-white hover:bg-white/20 h-11 w-11 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
             onClick={() => onOpenChange(false)}
+            aria-label="Sluit galerij"
           >
             <X className="h-5 w-5 sm:h-4 sm:w-4" />
           </Button>
@@ -689,14 +745,20 @@ function PhotoGalleryModal({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-2 sm:left-4 text-white hover:bg-white/20 h-12 w-12 sm:h-10 sm:w-10 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
+            className="absolute left-2 sm:left-4 text-white hover:bg-white/20 h-12 w-12 sm:h-11 sm:w-11 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
             onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
+            aria-label="Vorige foto"
           >
             <ChevronLeft className="h-8 w-8 sm:h-6 sm:w-6" />
           </Button>
         )}
 
-        <div className="w-full h-full p-0 sm:p-8 flex flex-col justify-center items-center">
+        <div 
+          className="w-full h-full p-0 sm:p-8 flex flex-col justify-center items-center select-none cursor-grab active:cursor-grabbing"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {photos[currentIndex].includes('drive.google.com') ? (
             <div className="flex flex-col items-center justify-center p-8 bg-black/40 rounded-xl backdrop-blur-md gap-6 max-w-sm text-center">
               <div className="h-20 w-20 bg-blue-500/10 rounded-full flex items-center justify-center">
@@ -720,7 +782,7 @@ function PhotoGalleryModal({
             <img
               src={photos[currentIndex]}
               alt={`Photo ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain pointer-events-none"
             />
           )}
         </div>
@@ -729,8 +791,9 @@ function PhotoGalleryModal({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-2 sm:right-4 text-white hover:bg-white/20 h-12 w-12 sm:h-10 sm:w-10 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
+            className="absolute right-2 sm:right-4 text-white hover:bg-white/20 h-12 w-12 sm:h-11 sm:w-11 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
             onClick={() => setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
+            aria-label="Volgende foto"
           >
             <ChevronRight className="h-8 w-8 sm:h-6 sm:w-6" />
           </Button>

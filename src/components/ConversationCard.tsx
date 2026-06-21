@@ -43,39 +43,39 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
 
   return (
     <Link href={`/conversations/${conversation.id}`}>
-      <div className="group rounded-xl border border-gray-200 bg-white p-4 hover:shadow-md hover:border-green-200 transition-all duration-200 cursor-pointer">
+      <div className="group rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-4 hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer">
         <div className="flex items-start gap-3">
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="h-11 w-11 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-              <span className="text-green-700 font-semibold text-sm">
+            <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+              <span className="text-primary font-semibold text-sm">
                 {displayName.substring(0, 2).toUpperCase()}
               </span>
             </div>
             <div
-              className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${statusDotColor}`}
+              className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-surface-container-lowest ${statusDotColor}`}
             />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="font-semibold text-gray-900 text-sm truncate">
+              <h3 className="font-semibold text-on-background text-sm truncate">
                 {displayName}
               </h3>
-              <span className="text-xs text-gray-400 whitespace-nowrap">{timeAgo}</span>
+              <span className="text-xs text-outline whitespace-nowrap">{timeAgo}</span>
             </div>
 
             <div className="flex items-center gap-2 mt-0.5">
               <StatusBadge status={conversation.bot_paused ? 'paused' : conversation.status} />
               {contact?.phone && (
-                <span className="text-xs text-gray-400">{contact.phone}</span>
+                <span className="text-xs text-outline">{contact.phone}</span>
               )}
             </div>
 
             {/* Last message preview */}
-            <div className="flex items-center gap-1.5 mt-2 text-gray-500">
-              <MessageSquare className="h-3 w-3 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 mt-2 text-on-surface-variant">
+              <MessageSquare className="h-3 w-3 flex-shrink-0 text-outline" />
               <p className="text-xs truncate">{lastMessagePreview}</p>
             </div>
 

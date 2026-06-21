@@ -116,7 +116,7 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 fade-in-content">
       {/* Header */}
       <div>
         <h1 className="font-headline font-extrabold text-2xl tracking-tight text-on-background flex items-center gap-2">
@@ -148,7 +148,7 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
             <button
               onClick={() => saveSection(section)}
               disabled={saving === section.category}
-              className="bg-primary hover:bg-primary-container text-on-primary text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              className="bg-primary hover:bg-primary-container text-on-primary text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               {saving === section.category ? (
                 <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Opslaan...</>
@@ -161,30 +161,35 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
           </div>
 
           <div className="space-y-4">
-            {section.fields.map((field) => (
-              <div key={field.key}>
-                <label className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                  {field.label}
-                </label>
-                {field.type === 'input' ? (
-                  <input
-                    type="text"
-                    value={getValue(section.category, field.key)}
-                    onChange={(e) => setValue(section.category, field.key, e.target.value)}
-                    placeholder={field.placeholder}
-                    className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                ) : (
-                  <textarea
-                    value={getValue(section.category, field.key)}
-                    onChange={(e) => setValue(section.category, field.key, e.target.value)}
-                    placeholder={field.placeholder}
-                    rows={4}
-                    className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                  />
-                )}
-              </div>
-            ))}
+            {section.fields.map((field) => {
+              const uniqueId = `${section.category}-${field.key}`;
+              return (
+                <div key={field.key}>
+                  <label htmlFor={uniqueId} className="block font-label text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    {field.label}
+                  </label>
+                  {field.type === 'input' ? (
+                    <input
+                      id={uniqueId}
+                      type="text"
+                      value={getValue(section.category, field.key)}
+                      onChange={(e) => setValue(section.category, field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 min-h-[44px]"
+                    />
+                  ) : (
+                    <textarea
+                      id={uniqueId}
+                      value={getValue(section.category, field.key)}
+                      onChange={(e) => setValue(section.category, field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      rows={4}
+                      className="w-full bg-surface-container-highest rounded-xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 resize-none min-h-[44px]"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}

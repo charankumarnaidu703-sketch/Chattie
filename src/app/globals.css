@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 /* ═══════════════════════════════════════════
    Organic Concierge Design System — Tokens
@@ -99,15 +98,111 @@
   --color-error: var(--error);
   --color-error-container: var(--error-container);
   --color-on-error: var(--on-error);
-  --font-headline: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-label: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-headline: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-label: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Force light mode */
+/* Dark mode and theme support */
+html.dark {
+  --surface: #0a0f18;
+  --surface-dim: #070a10;
+  --surface-bright: #121927;
+  --surface-container-lowest: #0d1320;
+  --surface-container-low: #131d2f;
+  --surface-container: #1b283f;
+  --surface-container-high: #233451;
+  --surface-container-highest: #2b3f63;
+  --surface-variant: #233451;
+
+  --primary: #4ade80;
+  --primary-container: #166534;
+  --primary-fixed: #22c55e;
+  --primary-fixed-dim: #15803d;
+  --on-primary: #003913;
+  --on-primary-container: #dcfee0;
+  --surface-tint: #4ade80;
+
+  --secondary: #ff8c53;
+  --secondary-container: #7a2400;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #ffdbce;
+
+  --tertiary: #7ca3ff;
+  --tertiary-container: #003ba2;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #dbe1ff;
+
+  --on-surface: #eff5ff;
+  --on-surface-variant: #bdcaba;
+  --on-background: #eff5ff;
+  --outline: #8c9b8b;
+  --outline-variant: #485446;
+  --inverse-surface: #eff4ff;
+  --inverse-on-surface: #0b1c30;
+  --inverse-primary: #006b2c;
+
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --on-error: #690005;
+  --on-error-container: #ffdad6;
+
+  --shadow-ambient: 0 12px 32px -4px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 16px 40px -6px rgba(0, 0, 0, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    --surface: #0a0f18;
+    --surface-dim: #070a10;
+    --surface-bright: #121927;
+    --surface-container-lowest: #0d1320;
+    --surface-container-low: #131d2f;
+    --surface-container: #1b283f;
+    --surface-container-high: #233451;
+    --surface-container-highest: #2b3f63;
+    --surface-variant: #233451;
+
+    --primary: #4ade80;
+    --primary-container: #166534;
+    --primary-fixed: #22c55e;
+    --primary-fixed-dim: #15803d;
+    --on-primary: #003913;
+    --on-primary-container: #dcfee0;
+    --surface-tint: #4ade80;
+
+    --secondary: #ff8c53;
+    --secondary-container: #7a2400;
+    --on-secondary: #ffffff;
+    --on-secondary-container: #ffdbce;
+
+    --tertiary: #7ca3ff;
+    --tertiary-container: #003ba2;
+    --on-tertiary: #ffffff;
+    --on-tertiary-container: #dbe1ff;
+
+    --on-surface: #eff5ff;
+    --on-surface-variant: #bdcaba;
+    --on-background: #eff5ff;
+    --outline: #8c9b8b;
+    --outline-variant: #485446;
+    --inverse-surface: #eff4ff;
+    --inverse-on-surface: #0b1c30;
+    --inverse-primary: #006b2c;
+
+    --error: #ffb4ab;
+    --error-container: #93000a;
+    --on-error: #690005;
+    --on-error-container: #ffdad6;
+
+    --shadow-ambient: 0 12px 32px -4px rgba(0, 0, 0, 0.4);
+    --shadow-elevated: 0 16px 40px -6px rgba(0, 0, 0, 0.55);
+  }
+}
+
 html {
-  color-scheme: light;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
@@ -160,11 +255,33 @@ body {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Chat scroll area */
-.chat-scroll {
-  height: calc(100dvh - 320px);
-  overflow-y: auto;
+/* Staggered list entrance animations */
+@keyframes slideInStaggered {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
+.stagger-item {
+  opacity: 0;
+  animation: slideInStaggered 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 50ms; }
+.stagger-item:nth-child(2) { animation-delay: 100ms; }
+.stagger-item:nth-child(3) { animation-delay: 150ms; }
+.stagger-item:nth-child(4) { animation-delay: 200ms; }
+.stagger-item:nth-child(5) { animation-delay: 250ms; }
+.stagger-item:nth-child(6) { animation-delay: 300ms; }
+.stagger-item:nth-child(7) { animation-delay: 350ms; }
+.stagger-item:nth-child(8) { animation-delay: 400ms; }
+.stagger-item:nth-child(9) { animation-delay: 450ms; }
+.stagger-item:nth-child(10) { animation-delay: 500ms; }
 
 /* Material Symbols (for icons) */
 .material-symbols-outlined {
@@ -176,4 +293,52 @@ body {
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
+}
+
+/* Page entrance transitions */
+@keyframes pageEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-transition {
+  animation: pageEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Skeleton-to-content fade-in transition */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in-content {
+  animation: fadeIn 0.45s ease-out forwards;
+}
+
+/* Bot status toggle morphing style */
+.bot-toggle-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bot-toggle-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.bot-toggle-btn:hover::before {
+  opacity: 0.05;
+}
+
+.bot-toggle-btn:active::before {
+  opacity: 0.15;
 }

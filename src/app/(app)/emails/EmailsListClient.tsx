@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { EmptyState } from '@/components/EmptyState';
 import { StatusBadge, StatusDot } from '@/components/StatusBadge';
 import { QualificationProgress } from '@/components/QualificationProgress';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import type { EmailThread } from '@/lib/types';
 
@@ -35,11 +36,22 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('actief'); // Default to target actionable
   const [showSearch, setShowSearch] = useState(false);
+  const [displayCount, setDisplayCount] = useState(15);
   
   const [deleteTarget, setDeleteTarget] = useState<EmailThread | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const supabase = getSupabaseClient();
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    setDisplayCount(15);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setDisplayCount(15);
+  };
 
   // Sort by processed_at desc
   const sortedEmails = [...emails].sort((a, b) => 
@@ -76,6 +88,8 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
     return result;
   }, [sortedEmails, activeTab, searchQuery]);
 
+  const visibleItems = useMemo(() => filtered.slice(0, displayCount), [filtered, displayCount]);
+
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
 
@@ -99,7 +113,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fade-in-content">
       {/* Header */}
       <header className="flex justify-between items-center">
         <h1 className="font-headline font-bold text-2xl tracking-tight text-primary flex items-center gap-2">
@@ -108,7 +122,8 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
         </h1>
         <button
           onClick={() => setShowSearch((s) => !s)}
-          className="p-2 rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
+          className="h-11 w-11 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
+          aria-label="Zoek e-mails"
         >
           <Search className="h-5 w-5 text-primary" />
         </button>
@@ -124,22 +139,22 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
             type="text"
             placeholder="Zoek op naam, email of onderwerp..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container-highest rounded-2xl px-4 py-3 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20"
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full bg-surface-container-highest rounded-2xl px-4 py-3.5 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 min-h-[44px]"
             autoFocus
           />
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 pt-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-6 py-2 rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 ${
+            onClick={() => handleTabChange(tab.key)}
+            className={`px-6 min-h-[44px] flex items-center justify-center rounded-full font-label font-bold text-[12px] uppercase tracking-wider transition-all flex-shrink-0 cursor-pointer ${
               activeTab === tab.key
-                ? 'bg-primary text-on-primary'
+                ? 'bg-primary text-on-primary shadow-ambient'
                 : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high'
             }`}
           >
@@ -156,14 +171,14 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
         />
       ) : (
         <div className="space-y-3 pb-8">
-          {filtered.map((thread) => {
+          {visibleItems.map((thread) => {
             const step = thread.qualification_step || 1;
             const statusColor = 
               thread.status === 'qualified' ? 'tertiary' : 
               thread.status === 'closed' ? 'secondary' : 'primary';
 
             return (
-              <div key={thread.id} className="relative group">
+              <div key={thread.id} className="relative group stagger-item">
                 <Link href={`/emails/${thread.id}`} className="block relative z-0">
                   <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] shadow-ambient border border-outline-variant/10 active:scale-[0.98] transition-transform">
                     {/* Name + Time */}
@@ -222,61 +237,40 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                     e.stopPropagation();
                     setDeleteTarget(thread);
                   }}
-                  className="absolute top-4 right-4 z-10 p-2.5 bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                  aria-label="Verwijderen"
+                  className="absolute top-4 right-4 z-10 h-11 w-11 flex items-center justify-center bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                  aria-label={`Verwijder email van ${thread.sender_name || 'onbekende afzender'}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             );
           })}
+
+          {filtered.length > displayCount && (
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setDisplayCount((prev) => prev + 15)}
+                className="px-6 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label text-xs font-bold uppercase tracking-wider rounded-full active:scale-95 transition-all min-h-[44px] cursor-pointer"
+              >
+                Laad meer e-mails ({filtered.length - displayCount} over)
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Delete confirmation modal */}
-      {deleteTarget && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm transition-opacity"
-            onClick={() => !isDeleting && setDeleteTarget(null)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 px-6 animate-slide-in">
-            <div className="bg-surface-container-lowest rounded-[1.5rem] shadow-elevated max-w-sm w-full p-6 text-center border border-outline-variant/20">
-              <div className="mx-auto w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mb-4">
-                <Trash2 className="h-6 w-6 text-error" />
-              </div>
-
-              <h3 className="font-headline font-bold text-lg text-on-background">
-                E-mail verwijderen?
-              </h3>
-              <p className="font-body text-sm text-on-surface-variant mt-2 leading-relaxed">
-                Dit verwijdert "{deleteTarget.subject || '(Geen onderwerp)'}" permanent.
-              </p>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-3 font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant bg-surface-container hover:bg-surface-container-high rounded-xl transition-colors disabled:opacity-50"
-                 >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-3 font-label text-xs font-bold uppercase tracking-widest text-on-error bg-error hover:bg-error/90 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isDeleting ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> ...</>
-                  ) : (
-                    'Verwijder'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="E-mail verwijderen?"
+        description={`Dit verwijdert "${deleteTarget?.subject || '(Geen onderwerp)'}" permanent.`}
+        confirmLabel="Verwijder"
+        cancelLabel="Annuleren"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

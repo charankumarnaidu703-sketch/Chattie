@@ -1,11 +1,29 @@
 import type { Metadata } from 'next';
+import { Manrope, Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Chattie — AI Klantenservice Dashboard',
   description: 'AI-powered WhatsApp en email klantenservice voor hoveniersbedrijf',
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -14,14 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="nl">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="min-h-screen bg-gray-50 antialiased">
+    <html lang="nl" className={`${manrope.variable} ${inter.variable}`}>
+      <body className="min-h-screen bg-surface antialiased">
         {children}
         <Toaster
           position="top-right"
@@ -35,3 +47,4 @@ export default function RootLayout({
     </html>
   );
 }
+

@@ -26,6 +26,8 @@ export function ConfirmDialog({
   onConfirm,
   isLoading = false,
 }: ConfirmDialogProps) {
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+
   // Close on Escape
   React.useEffect(() => {
     if (!open) return;
@@ -48,6 +50,47 @@ export function ConfirmDialog({
     };
   }, [open]);
 
+  // Focus trap and initial focus
+  React.useEffect(() => {
+    if (!open) return;
+
+    // Focus first focusable element (usually the cancel button to prevent accidental confirmation)
+    const focusable = dialogRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex="0"]'
+    );
+    if (focusable && focusable.length > 0) {
+      (focusable[0] as HTMLElement).focus();
+    }
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (!dialogRef.current) return;
+
+      const elements = dialogRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex="0"]'
+      );
+      if (elements.length === 0) return;
+
+      const first = elements[0] as HTMLElement;
+      const last = elements[elements.length - 1] as HTMLElement;
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTab);
+    return () => document.removeEventListener('keydown', handleTab);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -60,17 +103,24 @@ export function ConfirmDialog({
 
       {/* Dialog */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 animate-slide-in">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dialog-title"
+          aria-describedby="confirm-dialog-description"
+          className="bg-surface-container-lowest rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 animate-slide-in border border-outline-variant/10"
+        >
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-500 mt-1">{description}</p>
+            <h3 id="confirm-dialog-title" className="text-lg font-semibold text-on-background">{title}</h3>
+            <p id="confirm-dialog-description" className="text-sm text-on-surface-variant mt-1">{description}</p>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-on-surface-variant bg-surface-container hover:bg-surface-container-high rounded-lg transition-colors disabled:opacity-50"
             >
               {cancelLabel}
             </button>
@@ -80,8 +130,8 @@ export function ConfirmDialog({
               className={cn(
                 'px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50',
                 variant === 'destructive'
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-green-600 hover:bg-green-700'
+                  ? 'bg-error hover:bg-error/90'
+                  : 'bg-primary hover:bg-primary-container'
               )}
             >
               {isLoading ? (

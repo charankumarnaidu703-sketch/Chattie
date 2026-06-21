@@ -22,5 +22,9 @@ export default async function CompanyInfoPage() {
     // Table might not exist yet — show empty form
   }
 
-  return <CompanyInfoClient initialData={knowledgeRows} />;
+  return (
+    <div className="max-w-3xl mx-auto w-full px-6 py-6 pb-28 md:pb-6">
+      <CompanyInfoClient initialData={knowledgeRows} />
+    </div>
+  );
 }
