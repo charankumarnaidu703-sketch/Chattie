@@ -72,9 +72,12 @@ export function MobileNav() {
         </div>
       </nav>
 
-      {/* Sheet for overflow nav */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl border-t border-outline-variant/10 p-6 bg-surface-container-lowest">
+        <SheetContent
+          onClose={() => setIsOpen(false)}
+          side="bottom"
+          className="rounded-t-3xl border-t border-outline-variant/10 p-6 bg-surface-container-lowest"
+        >
           <SheetHeader className="text-left pb-4 border-b border-outline-variant/10">
             <SheetTitle className="font-headline font-bold text-on-background">Meer opties</SheetTitle>
           </SheetHeader>
