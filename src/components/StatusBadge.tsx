@@ -4,19 +4,19 @@ type StatusType = 'active' | 'paused' | 'qualified' | 'closed';
 
 const statusConfig: Record<StatusType, { label: string; color: string }> = {
   active: {
-    label: 'Bot actief',
+    label: 'Bot Active',
     color: 'text-primary bg-primary/10 border-primary/20',
   },
   paused: {
-    label: 'Bot gepauzeerd',
+    label: 'Bot Paused',
     color: 'text-secondary bg-secondary/10 border-secondary/20',
   },
   qualified: {
-    label: 'Volledig gekwalificeerd',
+    label: 'Fully Qualified',
     color: 'text-tertiary bg-tertiary/10 border-tertiary/20',
   },
   closed: {
-    label: 'Gesloten',
+    label: 'Closed',
     color: 'text-outline bg-outline/10 border-outline/20',
   },
 };
@@ -51,10 +51,10 @@ export function StatusDot({ status }: { status: string }) {
   };
 
   const labelMap: Record<string, string> = {
-    active: 'Bot actief',
-    paused: 'Bot gepauzeerd',
-    qualified: 'Volledig gekwalificeerd',
-    closed: 'Gesloten',
+    active: 'Bot Active',
+    paused: 'Bot Paused',
+    qualified: 'Fully Qualified',
+    closed: 'Closed',
   };
 
   return (

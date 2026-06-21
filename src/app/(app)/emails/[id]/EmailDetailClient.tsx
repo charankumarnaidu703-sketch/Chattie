@@ -83,9 +83,9 @@ export function EmailDetailClient({ initialThread }: Props) {
       if (error) throw error;
 
       setIsBotEnabled(newState);
-      toast.success(newState ? 'Bot Resumeert' : 'Bot Gepauzeerd');
+      toast.success(newState ? 'Bot Resumed' : 'Bot Paused');
     } catch {
-      toast.error('Kan de bot status niet updaten');
+      toast.error('Cannot update bot status');
     } finally {
       setIsChangingBot(false);
     }
@@ -115,10 +115,10 @@ export function EmailDetailClient({ initialThread }: Props) {
       if (error) throw error;
 
       setNewMessage('');
-      toast.success('Bericht verzonden');
+      toast.success('Message sent');
     } catch (err) {
       console.error(err);
-      toast.error('Fout bij verzenden bericht');
+      toast.error('Error sending message');
     } finally {
       setIsSending(false);
     }
@@ -137,7 +137,7 @@ export function EmailDetailClient({ initialThread }: Props) {
   return (
     <div className="flex flex-col flex-1 h-full w-full fade-in-content">
       <div className="px-4 pt-4 hidden md:block flex-shrink-0">
-        <Breadcrumbs items={[{ label: 'E-mails', href: '/emails' }, { label: thread.sender_name || thread.sender_email || 'Onbekend' }]} />
+        <Breadcrumbs items={[{ label: 'Emails', href: '/emails' }, { label: thread.sender_name || thread.sender_email || 'Unknown' }]} />
       </div>
       <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-auto md:flex-1 md:flex-row overflow-hidden md:rounded-[2rem] bg-surface-container-lowest md:border md:border-outline-variant/10 md:shadow-ambient">
 
@@ -150,14 +150,14 @@ export function EmailDetailClient({ initialThread }: Props) {
               <Link
                 href="/emails"
                 className="h-11 w-11 flex items-center justify-center -ml-1 rounded-full hover:bg-surface-container transition-colors active:scale-95 flex-shrink-0"
-                aria-label="Terug naar e-mails"
+                aria-label="Back to emails"
               >
                 <ArrowLeft className="h-5 w-5 text-primary" />
               </Link>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <h1 className="font-headline font-bold text-base md:text-lg text-on-background truncate">
-                    {thread.sender_name || thread.sender_email || 'Onbekend'}
+                    {thread.sender_name || thread.sender_email || 'Unknown'}
                   </h1>
                   <StatusBadge status={thread.status || 'active'} />
                 </div>
@@ -183,9 +183,9 @@ export function EmailDetailClient({ initialThread }: Props) {
                 {isChangingBot ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : isBotEnabled ? (
-                  <><Bot className="h-4 w-4" /><span className="hidden md:inline">Bot Actief</span></>
+                  <><Bot className="h-4 w-4" /><span className="hidden md:inline">Bot Active</span></>
                 ) : (
-                  <><Pause className="h-4 w-4" /><span className="hidden md:inline">Gepauzeerd</span></>
+                  <><Pause className="h-4 w-4" /><span className="hidden md:inline">Paused</span></>
                 )}
               </button>
 
@@ -193,7 +193,7 @@ export function EmailDetailClient({ initialThread }: Props) {
               <button
                 className="md:hidden h-11 w-11 flex items-center justify-center hover:bg-surface-container-low rounded-full transition-colors"
                 onClick={() => setInfoSheetOpen(true)}
-                aria-label="Lead details tonen"
+                aria-label="Show lead details"
               >
                 <Info className="h-5 w-5 text-on-surface-variant" />
               </button>
@@ -203,8 +203,8 @@ export function EmailDetailClient({ initialThread }: Props) {
           {/* Subject bar */}
           <div className="bg-surface-container-low px-4 py-2 border-b border-outline-variant/5">
             <p className="font-label text-[11px] text-on-surface-variant truncate">
-              <span className="font-bold uppercase tracking-wider mr-1.5">Onderwerp:</span>
-              {thread.subject || '(Geen onderwerp)'}
+              <span className="font-bold uppercase tracking-wider mr-1.5">Subject:</span>
+              {thread.subject || '(No subject)'}
             </p>
           </div>
         </header>
@@ -213,7 +213,7 @@ export function EmailDetailClient({ initialThread }: Props) {
         <div className="flex-1 overflow-y-auto px-3 md:px-6 py-4 md:py-6 scroll-smooth bg-surface">
           {messages.length === 0 ? (
             <div className="h-full flex items-center justify-center text-on-surface-variant/50 font-body text-sm text-center px-4">
-              Geen berichten geladen of thread is leeg.<br/>E-mails worden hier getoond.
+              No messages loaded or thread is empty.<br/>Emails will be displayed here.
             </div>
           ) : (
             <div className="space-y-4 md:space-y-6">
@@ -237,8 +237,8 @@ export function EmailDetailClient({ initialThread }: Props) {
                           </span>
                         )}
                         {!isInbound && !msg.sent_by_bot && (
-                          <span className="flex items-center gap-1 text-[10px] text-tertiary/70 font-label tracking-wide uppercase">
-                            <User className="h-3 w-3" /> Jij
+                          <span className="flex items-center gap-1 text-[10px] text-outline font-label tracking-wide uppercase">
+                            <User className="h-3 w-3" /> You
                           </span>
                         )}
                       </div>
@@ -267,7 +267,7 @@ export function EmailDetailClient({ initialThread }: Props) {
                   sendMessage();
                 }
               }}
-              placeholder={isBotEnabled ? 'Typ een antwoord (pauzeert AI)...' : 'Typ een bericht...'}
+              placeholder={isBotEnabled ? 'Type a reply (pauses AI)...' : 'Type a message...'}
               className="flex-1 max-h-[120px] bg-transparent font-body text-[14px] md:text-[15px] text-on-background placeholder:text-on-surface-variant/50 focus:outline-none resize-none py-2.5 px-3 md:py-3 md:px-4 min-h-[44px] overflow-y-auto"
               rows={1}
             />
@@ -291,7 +291,7 @@ export function EmailDetailClient({ initialThread }: Props) {
       <Sheet open={infoSheetOpen} onOpenChange={setInfoSheetOpen}>
         <SheetContent onClose={() => setInfoSheetOpen(false)} side="bottom">
           <SheetHeader>
-            <SheetTitle>Lead Informatie</SheetTitle>
+            <SheetTitle>Lead Information</SheetTitle>
           </SheetHeader>
           <div className="overflow-y-auto max-h-[65vh] -mx-2 px-2 pb-4">
             <EmailInfoPanel thread={thread} statusColor={statusColor} />
@@ -318,7 +318,7 @@ function EmailInfoPanel({
       {/* Contact details card */}
       <div className="space-y-3">
         <h3 className="font-label font-bold text-xs uppercase tracking-widest text-on-surface-variant">
-          Contactgegevens
+          Contact Details
         </h3>
         <div className="bg-surface-container-lowest rounded-2xl p-4 space-y-3 border border-outline-variant/10">
           <div className="flex items-center gap-3">
@@ -327,7 +327,7 @@ function EmailInfoPanel({
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-headline font-bold text-sm text-on-background truncate">
-                {thread.sender_name || 'Onbekend'}
+                {thread.sender_name || 'Unknown'}
               </p>
               <p className="font-label text-[11px] text-on-surface-variant truncate">
                 {thread.sender_email}
@@ -336,8 +336,8 @@ function EmailInfoPanel({
           </div>
           <div className="pt-2 border-t border-outline-variant/10 space-y-2">
             <InfoRow label="Status" value={thread.status || 'active'} />
-            <InfoRow label="Onderwerp" value={thread.subject || '(Geen)'} />
-            <InfoRow label="Classificatie" value={thread.classification || '-'} />
+            <InfoRow label="Subject" value={thread.subject || '(None)'} />
+            <InfoRow label="Classification" value={thread.classification || '-'} />
           </div>
         </div>
       </div>
@@ -345,7 +345,7 @@ function EmailInfoPanel({
       {/* Qualification */}
       <div className="space-y-4">
         <h3 className="font-label font-bold text-xs uppercase tracking-widest text-primary">
-          Kwalificatie Voortgang
+          Qualification Progress
         </h3>
 
         <QualificationProgress
@@ -390,7 +390,7 @@ function EmailInfoPanel({
                     {stepInfo.icon} {stepInfo.label}
                   </div>
                   <div className={'font-body text-sm leading-relaxed p-2.5 md:p-3 rounded-xl md:rounded-2xl border transition-colors break-words ' + fieldClass}>
-                    {fieldValue || (isCurrent ? 'Wachten op klant...' : 'Nog niet gevraagd')}
+                    {fieldValue || (isCurrent ? 'Waiting for client...' : 'Not yet asked')}
                   </div>
                 </div>
               </div>
@@ -405,9 +405,9 @@ function EmailInfoPanel({
           <div className="flex items-center gap-2">
             <span className="text-lg">✅</span>
             <div>
-              <p className="text-sm font-medium text-primary">Kwalificatie voltooid</p>
+              <p className="text-sm font-medium text-primary">Qualification Completed</p>
               <p className="text-xs text-primary">
-                Alle informatie is verzameld.
+                All information has been collected.
               </p>
             </div>
           </div>

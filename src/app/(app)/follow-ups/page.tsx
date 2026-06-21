@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { format, differenceInHours } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Clock, ArrowRight } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { EmptyState } from '@/components/EmptyState';
@@ -11,8 +11,8 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 export const dynamic = 'force-dynamic';
 
 function getUrgencyLevel(hours: number): { label: string; color: string } {
-  if (hours >= 72) return { label: 'Kritiek', color: 'text-error bg-error/10 border-error/20' };
-  if (hours >= 24) return { label: 'Hoog', color: 'text-secondary bg-secondary/10 border-secondary/20' };
+  if (hours >= 72) return { label: 'Critical', color: 'text-error bg-error/10 border-error/20' };
+  if (hours >= 24) return { label: 'High', color: 'text-secondary bg-secondary/10 border-secondary/20' };
   return { label: 'Medium', color: 'text-outline bg-outline/10 border-outline/20' };
 }
 
@@ -41,7 +41,7 @@ export default async function FollowUpsPage() {
             Follow-ups
           </h1>
           <p className="font-label text-xs text-outline mt-1">
-            Gesprekken die langer dan 12 uur geen reactie hebben gehad.
+            Conversations that have had no response for more than 12 hours.
           </p>
         </div>
 
@@ -49,8 +49,8 @@ export default async function FollowUpsPage() {
 
         {conversations.length === 0 ? (
           <EmptyState
-            message="Geen follow-ups nodig"
-            subMessage="Alle gesprekken zijn up-to-date! 🎉"
+            message="No follow-ups needed"
+            subMessage="All conversations are up-to-date! 🎉"
           />
         ) : (
           <div className="space-y-3">
@@ -65,15 +65,15 @@ export default async function FollowUpsPage() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <span className="font-headline font-bold text-on-background">
-                          {contact?.name || contact?.phone || 'Onbekend'}
+                          {contact?.name || contact?.phone || 'Unknown'}
                         </span>
                         <p className="font-label text-[11px] text-outline tracking-wider mt-0.5">
-                          Laatste bericht: {format(new Date(conv.updated_at), 'd MMM HH:mm', { locale: nl })}
+                          Last message: {format(new Date(conv.updated_at), 'd MMM HH:mm', { locale: enUS })}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-tight border ${urgency.color}`}>
-                          {urgency.label} — {hoursAgo}u
+                          {urgency.label} — {hoursAgo}h
                         </span>
                         <ArrowRight className="h-4 w-4 text-outline" />
                       </div>

@@ -30,7 +30,7 @@ export function WelcomeBanner() {
       <button
         onClick={handleDismiss}
         className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-container-high/50 text-outline hover:text-on-surface-variant transition-colors cursor-pointer"
-        aria-label="Welkomstbanner sluiten"
+        aria-label="Close welcome banner"
       >
         <X className="h-4.5 w-4.5" />
       </button>
@@ -41,10 +41,10 @@ export function WelcomeBanner() {
         </div>
         <div className="space-y-2">
           <h3 className="font-headline font-extrabold text-xl text-on-background tracking-tight">
-            Welkom bij uw Chattie CRM! 🌿
+            Welcome to your Chattie CRM! 🌿
           </h3>
           <p className="font-body text-sm text-on-surface-variant leading-relaxed max-w-2xl">
-            Dit dashboard helpt u bij het beheren van al uw klantcontacten, offerte-aanvragen en projectcommunicatie voor uw hoveniersbedrijf. Hier is een snelle handleiding om aan de slag te gaan:
+            This dashboard helps you manage all your customer contacts, quote requests, and project communication for your landscaping business. Here is a quick guide to get started:
           </p>
         </div>
       </div>
@@ -53,30 +53,30 @@ export function WelcomeBanner() {
         <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-2xl border border-outline-variant/10">
           <div className="flex items-center gap-2 text-primary mb-1">
             <MessageSquare className="h-4.5 w-4.5" />
-            <h4 className="font-headline font-bold text-xs uppercase tracking-wider">Gesprekken</h4>
+            <h4 className="font-headline font-bold text-xs uppercase tracking-wider">Conversations</h4>
           </div>
           <p className="font-body text-[12px] text-on-surface-variant/80 leading-relaxed">
-            WhatsApp-chats worden automatisch door de AI gekwalificeerd. Pauzeer de bot om handmatig te antwoorden.
+            WhatsApp chats are automatically qualified by AI. Pause the bot to reply manually.
           </p>
         </div>
 
         <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-2xl border border-outline-variant/10">
           <div className="flex items-center gap-2 text-tertiary mb-1">
             <Mail className="h-4.5 w-4.5" />
-            <h4 className="font-headline font-bold text-xs uppercase tracking-wider">E-mails</h4>
+            <h4 className="font-headline font-bold text-xs uppercase tracking-wider">Emails</h4>
           </div>
           <p className="font-body text-[12px] text-on-surface-variant/80 leading-relaxed">
-            Offertes en vragen worden automatisch gecategoriseerd zodat u direct de juiste opvolging kunt doen.
+            Quotes and questions are automatically categorized so you can take action immediately.
           </p>
         </div>
 
         <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-2xl border border-outline-variant/10">
           <div className="flex items-center gap-2 text-secondary mb-1">
             <Phone className="h-4.5 w-4.5" />
-            <h4 className="font-headline font-bold text-xs uppercase tracking-wider">Bellijst</h4>
+            <h4 className="font-headline font-bold text-xs uppercase tracking-wider">Call Notes</h4>
           </div>
           <p className="font-body text-[12px] text-on-surface-variant/80 leading-relaxed">
-            Leg telefoongesprekken en klantafspraken vast met de geïntegreerde n8n call notes widget.
+            Log phone calls and client appointments with the integrated n8n call notes widget.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export function WelcomeBanner() {
             <h4 className="font-headline font-bold text-xs uppercase tracking-wider">Follow-ups</h4>
           </div>
           <p className="font-body text-[12px] text-on-surface-variant/80 leading-relaxed">
-            Houd geplande opvolgingen en taken in de gaten zodat u nooit een potentiële klant vergeet.
+            Keep track of scheduled follow-ups and tasks so you never forget a potential customer.
           </p>
         </div>
       </div>

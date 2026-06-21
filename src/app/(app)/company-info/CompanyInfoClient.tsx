@@ -16,45 +16,45 @@ type SectionConfig = {
 const SECTIONS: SectionConfig[] = [
   {
     category: 'company_info',
-    title: 'Bedrijfsgegevens',
+    title: 'Company Details',
     icon: '🏢',
     fields: [
-      { key: 'name', label: 'Bedrijfsnaam', type: 'input', placeholder: 'Bijv. GreenScape Tuinontwerp' },
-      { key: 'owner', label: 'Eigenaar', type: 'input', placeholder: 'Bijv. Jan de Vries' },
-      { key: 'phone', label: 'Telefoonnummer', type: 'input', placeholder: 'Bijv. 06-12345678' },
-      { key: 'website', label: 'Website', type: 'input', placeholder: 'Bijv. www.greenscape.nl' },
+      { key: 'name', label: 'Company Name', type: 'input', placeholder: 'e.g., GreenScape Landscaping' },
+      { key: 'owner', label: 'Owner', type: 'input', placeholder: 'e.g., John Doe' },
+      { key: 'phone', label: 'Phone Number', type: 'input', placeholder: 'e.g., 06-12345678' },
+      { key: 'website', label: 'Website', type: 'input', placeholder: 'e.g., www.greenscape.nl' },
     ],
   },
   {
     category: 'services',
-    title: 'Diensten',
+    title: 'Services',
     icon: '🌿',
     fields: [
-      { key: 'list', label: 'Overzicht diensten', type: 'textarea', placeholder: 'Bijv. Tuinontwerp, aanleg, onderhoud, bestrating, schuttingen, boomverzorging...' },
+      { key: 'list', label: 'Services Overview', type: 'textarea', placeholder: 'e.g., Garden design, installation, maintenance, paving, fencing, tree care...' },
     ],
   },
   {
     category: 'service_area',
-    title: 'Werkgebied',
+    title: 'Service Area',
     icon: '📍',
     fields: [
-      { key: 'regions', label: 'Regio\'s', type: 'textarea', placeholder: 'Bijv. Amsterdam, Haarlem, Amstelveen en omgeving' },
+      { key: 'regions', label: 'Regions', type: 'textarea', placeholder: 'e.g., Amsterdam, Haarlem, Amstelveen and surrounding areas' },
     ],
   },
   {
     category: 'pricing',
-    title: 'Prijsindicaties',
+    title: 'Price Indications',
     icon: '💰',
     fields: [
-      { key: 'indication', label: 'Prijsindicaties', type: 'textarea', placeholder: 'Bijv. Tuinrenovatie vanaf €35/m², onderhoud vanaf €45/uur' },
+      { key: 'indication', label: 'Price Indications', type: 'textarea', placeholder: 'e.g., Garden renovation from €35/m², maintenance from €45/hour' },
     ],
   },
   {
     category: 'signature',
-    title: 'E-mail handtekening',
+    title: 'Email Signature',
     icon: '✍️',
     fields: [
-      { key: 'default', label: 'Standaard handtekening', type: 'textarea', placeholder: 'Met vriendelijke groet,\n\n[Naam]\n[Bedrijf]\nTel: [Nummer]\nWebsite: [URL]' },
+      { key: 'default', label: 'Default Signature', type: 'textarea', placeholder: 'Kind regards,\n\n[Name]\n[Company]\nTel: [Number]\nWebsite: [URL]' },
     ],
   },
 ];
@@ -96,20 +96,20 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
           .eq('key', field.key)
           .maybeSingle();
 
-        if (selectError) { setError(`Fout: ${selectError.message}`); return; }
+        if (selectError) { setError(`Error: ${selectError.message}`); return; }
 
         if (existing) {
           const { error: e } = await supabase.from('company_knowledge').update({ value }).eq('id', existing.id);
-          if (e) { setError(`Opslaan mislukt: ${e.message}`); return; }
+          if (e) { setError(`Save failed: ${e.message}`); return; }
         } else {
           const { error: e } = await supabase.from('company_knowledge').insert({ category: section.category, key: field.key, value });
-          if (e) { setError(`Opslaan mislukt: ${e.message}`); return; }
+          if (e) { setError(`Save failed: ${e.message}`); return; }
         }
       }
       setSaved(section.category);
       setTimeout(() => setSaved(null), 2000);
     } catch (err) {
-      setError(`Onverwachte fout: ${err instanceof Error ? err.message : 'Onbekend'}`);
+      setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown'}`);
     } finally {
       setSaving(null);
     }
@@ -121,10 +121,10 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
       <div>
         <h1 className="font-headline font-extrabold text-2xl tracking-tight text-on-background flex items-center gap-2">
           <Building2 className="h-6 w-6 text-primary" />
-          Bedrijfsinformatie
+          Company Information
         </h1>
         <p className="font-label text-xs text-outline mt-1">
-          Deze informatie wordt gebruikt door de AI voor e-mail concepten en klantgesprekken.
+          This information is used by the AI for email drafts and client conversations.
         </p>
       </div>
 
@@ -132,7 +132,7 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
 
       {error && (
         <div className="bg-error-container/30 border-l-4 border-error p-4 rounded-xl text-sm text-on-error-container">
-          <strong>⚠️ Fout:</strong> {error}
+          <strong>⚠️ Error:</strong> {error}
         </div>
       )}
 
@@ -151,11 +151,11 @@ export default function CompanyInfoClient({ initialData }: { initialData: Knowle
               className="bg-primary hover:bg-primary-container text-on-primary text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               {saving === section.category ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Opslaan...</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</>
               ) : saved === section.category ? (
-                <><Check className="h-3.5 w-3.5" /> Opgeslagen!</>
+                <><Check className="h-3.5 w-3.5" /> Saved!</>
               ) : (
-                <><Save className="h-3.5 w-3.5" /> Opslaan</>
+                <><Save className="h-3.5 w-3.5" /> Save</>
               )}
             </button>
           </div>

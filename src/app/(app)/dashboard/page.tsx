@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { CheckCircle2, ArrowRight, Activity, MapPin } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { DashboardSkeleton } from '@/components/LoadingSkeleton';
@@ -14,9 +14,9 @@ export const dynamic = 'force-dynamic';
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Goedemorgen';
-  if (hour < 18) return 'Goedemiddag';
-  return 'Goedenavond';
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
 async function DashboardContent() {
@@ -74,7 +74,7 @@ async function DashboardContent() {
           {getGreeting()} 🌿
         </h2>
         <p className="font-label text-xs font-bold uppercase tracking-widest text-outline mt-1">
-          {format(new Date(), "EEEE, d MMMM", { locale: nl })}
+          {format(new Date(), "EEEE, d MMMM", { locale: enUS })}
         </p>
       </div>
 
@@ -88,19 +88,19 @@ async function DashboardContent() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] border-t-4 border-primary shadow-ambient">
           <span className="block font-headline font-bold text-3xl text-on-background">{todaysLeads.length}</span>
-          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Leads vandaag</span>
+          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Leads Today</span>
         </div>
         <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] border-t-4 border-tertiary shadow-ambient">
           <span className="block font-headline font-bold text-3xl text-on-background">{totalEmails}</span>
-          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">E-mails</span>
+          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Emails</span>
         </div>
         <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] border-t-4 border-primary-fixed-dim shadow-ambient">
           <span className="block font-headline font-bold text-3xl text-on-background">{activeCount}</span>
-          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Bot actief</span>
+          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Bot Active</span>
         </div>
         <div className="bg-surface-container-lowest p-5 rounded-[1.5rem] border-t-4 border-secondary shadow-ambient">
           <span className="block font-headline font-bold text-3xl text-on-background">{pausedCount}</span>
-          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Gepauzeerd</span>
+          <span className="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Paused</span>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ async function DashboardContent() {
       {attentionItems.length > 0 && (
         <section>
           <h3 className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">
-            Aandacht nodig
+            Attention Required
           </h3>
           <div className="space-y-3">
             {attentionItems.map((item) => {
@@ -121,10 +121,10 @@ async function DashboardContent() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-headline font-bold text-on-background">
-                        {contact?.name || contact?.phone || 'Onbekend'}
+                        {contact?.name || contact?.phone || 'Unknown'}
                       </span>
                       <span className="bg-secondary/10 text-secondary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight">
-                        Bot gepauzeerd
+                        Bot Paused
                       </span>
                     </div>
                     <div className="flex items-center text-outline text-xs font-medium">
@@ -135,7 +135,7 @@ async function DashboardContent() {
                     href={`/conversations/${item.id}`}
                     className="bg-primary hover:bg-primary-container text-white text-xs font-bold px-4 py-2 rounded-full transition-all active:scale-95"
                   >
-                    Hervat bot
+                    Resume Bot
                   </Link>
                 </div>
               );
@@ -148,16 +148,16 @@ async function DashboardContent() {
       <section>
         <div className="flex justify-between items-center mb-4 ml-1">
           <h3 className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            Leads vandaag
+            Leads Today
           </h3>
           <Link href="/conversations" className="text-primary font-bold text-xs">
-            Alles tonen
+            Show all
           </Link>
         </div>
         {todaysLeads.length === 0 ? (
           <EmptyState
-            message="Nog geen leads vandaag"
-            subMessage="De bot staat klaar! 🌿 Zodra een klant via WhatsApp alle informatie geeft, verschijnt de lead hier."
+            message="No leads today yet"
+            subMessage="The bot is ready! 🌿 Once a customer provides all information via WhatsApp, the lead will appear here."
           />
         ) : (
           <div className="space-y-3">
@@ -173,7 +173,7 @@ async function DashboardContent() {
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-headline font-bold text-on-background text-lg leading-none mb-1">
-                            {contact?.name || contact?.phone || 'Onbekend'}
+                            {contact?.name || contact?.phone || 'Unknown'}
                           </p>
                           <p className="font-mono text-xs text-outline tracking-wider">
                             {contact?.phone || '-'}
@@ -207,10 +207,10 @@ async function DashboardContent() {
       <section>
         <h3 className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1 flex items-center gap-2">
           <Activity className="h-4 w-4 text-outline" />
-          Recente activiteit
+          Recent Activity
         </h3>
         {recentEvents.length === 0 ? (
-          <p className="text-sm text-outline text-center py-4">Nog geen activiteit</p>
+          <p className="text-sm text-outline text-center py-4">No activity yet</p>
         ) : (
           <div className="space-y-3">
             {recentEvents.map((event) => (
@@ -219,7 +219,7 @@ async function DashboardContent() {
                 <div className="flex-1 min-w-0">
                   <p className="text-on-surface-variant">{event.description || event.type}</p>
                   <p className="font-label text-[10px] text-outline mt-0.5">
-                    {format(new Date(event.created_at), 'd MMM HH:mm', { locale: nl })}
+                    {format(new Date(event.created_at), 'd MMM HH:mm', { locale: enUS })}
                   </p>
                 </div>
               </div>

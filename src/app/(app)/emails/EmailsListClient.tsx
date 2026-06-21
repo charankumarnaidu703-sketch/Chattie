@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Mail, Search, Trash2, Loader2, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/EmptyState';
@@ -20,15 +20,15 @@ interface EmailsListClientProps {
 function getTimeLabel(dateStr: string) {
   const d = new Date(dateStr);
   if (isToday(d)) return format(d, 'HH:mm');
-  if (isYesterday(d)) return 'Gisteren';
-  return formatDistanceToNow(d, { locale: nl, addSuffix: false });
+  if (isYesterday(d)) return 'Yesterday';
+  return formatDistanceToNow(d, { locale: enUS, addSuffix: false });
 }
 
 const TABS = [
-  { key: 'alle', label: 'Alle' },
-  { key: 'nieuw', label: 'Nieuw' },
-  { key: 'actief', label: 'Actief' },
-  { key: 'qualified', label: 'Klaar' },
+  { key: 'alle', label: 'All' },
+  { key: 'nieuw', label: 'New' },
+  { key: 'actief', label: 'Active' },
+  { key: 'qualified', label: 'Qualified' },
 ];
 
 export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
@@ -104,9 +104,9 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
 
       setEmails((prev) => prev.filter((e) => e.id !== deleteTarget.id));
       setDeleteTarget(null);
-      toast.success('Email thread verwijderd');
+      toast.success('Email thread deleted');
     } catch {
-      toast.error('Kon email niet verwijderen. Probeer opnieuw.');
+      toast.error('Failed to delete email. Please try again.');
     } finally {
       setIsDeleting(false);
     }
@@ -123,7 +123,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
         <button
           onClick={() => setShowSearch((s) => !s)}
           className="h-11 w-11 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
-          aria-label="Zoek e-mails"
+          aria-label="Search emails"
         >
           <Search className="h-5 w-5 text-primary" />
         </button>
@@ -137,7 +137,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
         <div className="animate-slide-in">
           <input
             type="text"
-            placeholder="Zoek op naam, email of onderwerp..."
+            placeholder="Search by name, email, or subject..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full bg-surface-container-highest rounded-2xl px-4 py-3.5 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 min-h-[44px]"
@@ -166,8 +166,8 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
       {/* List */}
       {filtered.length === 0 ? (
         <EmptyState
-          message={searchQuery ? 'Geen resultaten gevonden' : 'Geen e-mails in deze categorie'}
-          subMessage={searchQuery ? `Geen e-mails gevonden voor "${searchQuery}"` : 'Klant emails verschijnen hier automatisch.'}
+          message={searchQuery ? 'No results found' : 'No emails in this category'}
+          subMessage={searchQuery ? `No emails found for "${searchQuery}"` : 'Client emails will appear here automatically.'}
         />
       ) : (
         <div className="space-y-3 pb-8">
@@ -186,7 +186,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                       <div className="flex items-center gap-3">
                         <StatusDot status={thread.status || 'active'} />
                         <span className="font-headline font-bold text-on-background truncate max-w-[200px]">
-                          {thread.sender_name || thread.sender_email || 'Onbekend'}
+                          {thread.sender_name || thread.sender_email || 'Unknown'}
                         </span>
                         {/* Bot indicator badge */}
                         {thread.bot_enabled && (
@@ -203,7 +203,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
 
                     {/* Subject Line */}
                     <h3 className="font-headline font-bold text-sm text-on-background/80 mb-3 truncate">
-                      {thread.subject || '(Geen onderwerp)'}
+                      {thread.subject || '(No subject)'}
                     </h3>
 
                     {/* Status Badge */}
@@ -238,7 +238,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                     setDeleteTarget(thread);
                   }}
                   className="absolute top-4 right-4 z-10 h-11 w-11 flex items-center justify-center bg-surface-container hover:bg-error/10 text-outline hover:text-error rounded-xl transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
-                  aria-label={`Verwijder email van ${thread.sender_name || 'onbekende afzender'}`}
+                  aria-label={`Delete email from ${thread.sender_name || 'unknown sender'}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -252,7 +252,7 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
                 onClick={() => setDisplayCount((prev) => prev + 15)}
                 className="px-6 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label text-xs font-bold uppercase tracking-wider rounded-full active:scale-95 transition-all min-h-[44px] cursor-pointer"
               >
-                Laad meer e-mails ({filtered.length - displayCount} over)
+                Load more emails ({filtered.length - displayCount} remaining)
               </button>
             </div>
           )}
@@ -263,10 +263,10 @@ export function EmailsListClient({ initialEmails }: EmailsListClientProps) {
       <ConfirmDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="E-mail verwijderen?"
-        description={`Dit verwijdert "${deleteTarget?.subject || '(Geen onderwerp)'}" permanent.`}
-        confirmLabel="Verwijder"
-        cancelLabel="Annuleren"
+        title="Delete email?"
+        description={`This will permanently delete "${deleteTarget?.subject || '(No subject)'}".`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
         variant="destructive"
         onConfirm={handleDeleteConfirm}
         isLoading={isDeleting}

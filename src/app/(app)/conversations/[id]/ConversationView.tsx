@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -57,7 +57,7 @@ export function ConversationView({
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const contact = conversation.contacts;
-  const displayName = contact?.name || contact?.phone || 'Onbekend';
+  const displayName = contact?.name || contact?.phone || 'Unknown';
   const supabase = getSupabaseClient();
 
   // Auto-scroll to bottom
@@ -184,11 +184,11 @@ export function ConversationView({
 
       toast.success(
         newPaused
-          ? 'Bot gepauzeerd — u heeft de controle'
-          : 'Bot hervat — automatische antwoorden staan weer aan'
+          ? 'Bot paused — you are in control'
+          : 'Bot resumed — automatic replies are enabled'
       );
     } catch {
-      toast.error('Kon bot status niet wijzigen');
+      toast.error('Failed to change bot status');
     } finally {
       setIsTogglingBot(false);
     }
@@ -237,9 +237,9 @@ export function ConversationView({
         throw new Error('Send failed');
       }
 
-      toast.success('Bericht verzonden');
+      toast.success('Message sent');
     } catch {
-      toast.error('Kon bericht niet verzenden. Probeer opnieuw.');
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setIsSending(false);
     }
@@ -256,7 +256,7 @@ export function ConversationView({
   return (
     <div className="flex flex-col h-[calc(100dvh-6rem)] md:h-screen fade-in-content">
       <div className="px-4 pt-4 hidden md:block flex-shrink-0 bg-surface">
-        <Breadcrumbs items={[{ label: 'Gesprekken', href: '/conversations' }, { label: displayName }]} />
+        <Breadcrumbs items={[{ label: 'Conversations', href: '/conversations' }, { label: displayName }]} />
       </div>
       {/* Header */}
       <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex-shrink-0">
@@ -265,7 +265,7 @@ export function ConversationView({
             <Link
               href="/conversations"
               className="h-11 w-11 flex items-center justify-center -ml-2 hover:bg-surface-container-low rounded-full transition-colors active:scale-95"
-              aria-label="Terug naar gesprekken"
+              aria-label="Back to conversations"
             >
               <ArrowLeft className="h-5 w-5 text-primary" />
             </Link>
@@ -287,15 +287,15 @@ export function ConversationView({
               {isTogglingBot ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : conversation.bot_paused ? (
-                <><Play className="h-4 w-4" /> Hervat</>
+                <><Play className="h-4 w-4" /> Resume</>
               ) : (
-                <><Pause className="h-4 w-4" /> Pauze</>
+                <><Pause className="h-4 w-4" /> Pause</>
               )}
             </button>
             <button
               className="md:hidden h-11 w-11 flex items-center justify-center hover:bg-surface-container-low rounded-full transition-colors"
               onClick={() => setInfoSheetOpen(true)}
-              aria-label="Lead details tonen"
+              aria-label="Show lead details"
             >
               <Info className="h-5 w-5 text-on-surface-variant" />
             </button>
@@ -306,7 +306,7 @@ export function ConversationView({
         {conversation.bot_paused && (
           <div className="bg-secondary/5 border-b border-secondary/10 px-4 py-2.5 flex items-center gap-3">
             <Pause className="h-4 w-4 text-secondary flex-shrink-0" />
-            <p className="font-label text-[12px] font-semibold text-secondary">Bot gepauzeerd — u beheert dit gesprek</p>
+            <p className="font-label text-[12px] font-semibold text-secondary">Bot paused — you are managing this conversation</p>
           </div>
         )}
 
@@ -327,7 +327,7 @@ export function ConversationView({
           >
             {messages.length === 0 ? (
               <div className="flex items-center justify-center h-full text-outline text-sm font-body">
-                Nog geen berichten in dit gesprek
+                No messages in this conversation yet
               </div>
             ) : (
               messages.map((message) => (
@@ -342,7 +342,7 @@ export function ConversationView({
             <button
               onClick={() => scrollToBottom()}
               className="absolute bottom-20 right-4 md:bottom-8 md:right-8 h-11 w-11 rounded-full bg-surface-container-lowest shadow-ambient flex items-center justify-center hover:bg-surface-container-low transition-colors z-10"
-              aria-label="Naar beneden scrollen"
+              aria-label="Scroll to bottom"
             >
               <ChevronDown className="h-5 w-5 text-on-surface-variant" />
             </button>
@@ -358,7 +358,7 @@ export function ConversationView({
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Typ uw bericht..."
+                    placeholder="Type your message..."
                     className="bg-transparent border-none focus:ring-0 focus:outline-none text-sm flex-1 font-medium text-on-background placeholder:text-on-surface-variant/50"
                     disabled={isSending}
                   />
@@ -389,7 +389,7 @@ export function ConversationView({
       <Sheet open={infoSheetOpen} onOpenChange={setInfoSheetOpen}>
         <SheetContent onClose={() => setInfoSheetOpen(false)} side="bottom">
           <SheetHeader>
-            <SheetTitle>Lead informatie</SheetTitle>
+            <SheetTitle>Lead Information</SheetTitle>
           </SheetHeader>
           <div className="overflow-y-auto max-h-[65vh] -mx-2 px-2 pb-4">
             <InfoPanel conversation={conversation} contact={contact} />
@@ -440,7 +440,7 @@ function MessageBubble({ message }: { message: Message }) {
   return (
     <div className={`flex flex-col ${isInbound ? 'items-start' : 'items-end'} gap-1 mb-2 animate-slide-in`}>
       {isManual && (
-        <span className="font-label text-[9px] font-bold text-tertiary uppercase tracking-widest mr-1">Handmatig</span>
+        <span className="font-label text-[9px] font-bold text-tertiary uppercase tracking-widest mr-1">Manual</span>
       )}
       <div
         className={`
@@ -460,7 +460,7 @@ function MessageBubble({ message }: { message: Message }) {
                 <ImageIcon className="h-4 w-4" />
               </div>
               <span className="text-sm font-medium">
-                {mediaUrls.length === 1 ? 'Bekijk foto' : `Bekijk ${mediaUrls.length} foto's`}
+                {mediaUrls.length === 1 ? 'View photo' : `View ${mediaUrls.length} photos`}
               </span>
             </div>
             <PhotoGalleryModal photos={mediaUrls} open={galleryOpen} onOpenChange={setGalleryOpen} />
@@ -469,7 +469,7 @@ function MessageBubble({ message }: { message: Message }) {
         {message.type === 'image' && mediaUrls.length === 0 && (
           <div className="flex items-center gap-1.5 mb-1">
             <Camera className="h-3.5 w-3.5" />
-            <span className="text-xs opacity-80">Foto ontvangen</span>
+            <span className="text-xs opacity-80">Photo received</span>
           </div>
         )}
         {message.content && (
@@ -492,7 +492,7 @@ function InfoPanel({
   conversation: Conversation;
   contact: Contact;
 }) {
-  const displayName = contact?.name || contact?.phone || 'Onbekend';
+  const displayName = contact?.name || contact?.phone || 'Unknown';
   const [galleryOpen, setGalleryOpen] = useState(false);
   const rawPhotos = conversation.collected_photos || [];
   const photos = rawPhotos.map(getDirectImageUrl);
@@ -506,12 +506,12 @@ function InfoPanel({
 
       {/* Contact Details */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-on-surface-variant">Contactgegevens</h3>
+        <h3 className="text-sm font-semibold text-on-surface-variant">Contact Details</h3>
 
         <div className="space-y-2">
           <DetailRow
             icon={<span className="text-base">👤</span>}
-            label="Naam"
+            label="Name"
             value={displayName}
           />
           <DetailRow
@@ -523,8 +523,8 @@ function InfoPanel({
           />
           <DetailRow
             icon={<Phone className="h-4 w-4 text-primary" />}
-            label="Telefoon"
-            value={conversation.collected_phone || 'Nog niet verzameld'}
+            label="Phone"
+            value={conversation.collected_phone || 'Not yet collected'}
             isLink={!!conversation.collected_phone}
             href={`tel:${conversation.collected_phone}`}
             highlight
@@ -536,36 +536,36 @@ function InfoPanel({
 
       {/* Collected Data */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-on-surface-variant">Verzamelde gegevens</h3>
+        <h3 className="text-sm font-semibold text-on-surface-variant">Collected Data</h3>
 
         <div className="space-y-2">
           <DetailRow
             icon={<MapPin className="h-4 w-4 text-outline" />}
-            label="Adres"
+            label="Address"
             value={conversation.collected_address || '-'}
           />
           <DetailRow
             icon={<span className="text-base">🌿</span>}
-            label="Wensen"
+            label="Wishes"
             value={conversation.collected_wishes || '-'}
           />
           <DetailRow
             icon={<Ruler className="h-4 w-4 text-outline" />}
-            label="Afmetingen"
+            label="Dimensions"
             value={conversation.collected_dimensions || '-'}
           />
           <DetailRow
             icon={<Camera className="h-4 w-4 text-outline" />}
-            label="Foto's"
+            label="Photos"
             value={
               photos.length
-                ? `${photos.length} ontvangen`
-                : 'Geen'
+                ? `${photos.length} received`
+                : 'None'
             }
             action={
               photos.length > 0 ? (
                 <Button variant="outline" size="sm" onClick={() => setGalleryOpen(true)} className="h-9 sm:h-7 text-xs px-3 sm:px-2">
-                  Bekijk foto's
+                  View photos
                 </Button>
               ) : undefined
             }
@@ -588,9 +588,9 @@ function InfoPanel({
             <div className="flex items-center gap-2">
               <span className="text-lg">✅</span>
               <div>
-                <p className="text-sm font-medium text-primary">Kwalificatie voltooid</p>
+                <p className="text-sm font-medium text-primary">Qualification Completed</p>
                 <p className="text-xs text-primary">
-                  Alle informatie is verzameld. Bel de klant om een afspraak te maken.
+                  All information has been collected. Call the client to schedule an appointment.
                 </p>
               </div>
             </div>
@@ -634,7 +634,7 @@ function DetailRow({
             </a>
           ) : (
             <p
-              className={`text-sm ${highlight && value !== 'Nog niet verzameld'
+              className={`text-sm ${highlight && value !== 'Not yet collected'
                 ? 'font-semibold text-primary'
                 : 'text-on-background'
                 }`}
@@ -723,7 +723,7 @@ function PhotoGalleryModal({
             onClick={() => {
               window.open(photos[currentIndex], '_blank');
             }}
-            aria-label="Download foto"
+            aria-label="Download photo"
           >
             <Download className="h-5 w-5 sm:h-4 sm:w-4" />
           </Button>
@@ -732,7 +732,7 @@ function PhotoGalleryModal({
             size="icon"
             className="text-white hover:bg-white/20 h-11 w-11 sm:h-9 sm:w-9 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md"
             onClick={() => onOpenChange(false)}
-            aria-label="Sluit galerij"
+            aria-label="Close gallery"
           >
             <X className="h-5 w-5 sm:h-4 sm:w-4" />
           </Button>
@@ -747,7 +747,7 @@ function PhotoGalleryModal({
             size="icon"
             className="absolute left-2 sm:left-4 text-white hover:bg-white/20 h-12 w-12 sm:h-11 sm:w-11 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
             onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
-            aria-label="Vorige foto"
+            aria-label="Previous photo"
           >
             <ChevronLeft className="h-8 w-8 sm:h-6 sm:w-6" />
           </Button>
@@ -765,9 +765,9 @@ function PhotoGalleryModal({
                 <ImageIcon className="h-10 w-10 text-blue-400" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-white font-medium text-lg">Google Drive Foto</h3>
+                <h3 className="text-white font-medium text-lg">Google Drive Photo</h3>
                 <p className="text-gray-400 text-sm">
-                  Deze foto is opgeslagen in Google Drive. Klik op de knop hieronder om deze veilig in een nieuw tabblad te openen.
+                  This photo is stored in Google Drive. Click the button below to open it securely in a new tab.
                 </p>
               </div>
               <Button
@@ -775,7 +775,7 @@ function PhotoGalleryModal({
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 h-12 rounded-xl mt-2"
               >
                 <ImageIcon className="h-5 w-5" />
-                Open Foto
+                Open Photo
               </Button>
             </div>
           ) : (
@@ -793,7 +793,7 @@ function PhotoGalleryModal({
             size="icon"
             className="absolute right-2 sm:right-4 text-white hover:bg-white/20 h-12 w-12 sm:h-11 sm:w-11 rounded-full bg-black/40 sm:bg-transparent backdrop-blur-md z-10"
             onClick={() => setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
-            aria-label="Volgende foto"
+            aria-label="Next photo"
           >
             <ChevronRight className="h-8 w-8 sm:h-6 sm:w-6" />
           </Button>

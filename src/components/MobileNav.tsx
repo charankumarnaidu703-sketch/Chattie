@@ -9,11 +9,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/conversations', label: 'Gesprekken', icon: MessageSquare },
-  { href: '/emails', label: 'E-mails', icon: Mail },
-  { href: '/call-notes', label: 'Bellijst', icon: Phone },
+  { href: '/conversations', label: 'Conversations', icon: MessageSquare },
+  { href: '/emails', label: 'Emails', icon: Mail },
+  { href: '/call-notes', label: 'Call Notes', icon: Phone },
   { href: '/follow-ups', label: 'Follow-ups', icon: Clock },
-  { href: '/company-info', label: 'Bedrijf', icon: Building2 },
+  { href: '/company-info', label: 'Company Info', icon: Building2 },
 ];
 
 export function MobileNav() {
@@ -64,10 +64,10 @@ export function MobileNav() {
                 ? 'text-primary bg-surface-container-low/50'
                 : 'text-outline hover:text-on-surface-variant'
             )}
-            aria-label="Meer navigatieopties"
+            aria-label="More navigation options"
           >
             <MoreHorizontal className={cn('h-6 w-6', isOverflowActive && 'stroke-[2.5]')} aria-hidden="true" />
-            <span className="sr-only">Meer</span>
+            <span className="sr-only">More</span>
           </button>
         </div>
       </nav>
@@ -79,7 +79,7 @@ export function MobileNav() {
           className="rounded-t-3xl border-t border-outline-variant/10 p-6 bg-surface-container-lowest"
         >
           <SheetHeader className="text-left pb-4 border-b border-outline-variant/10">
-            <SheetTitle className="font-headline font-bold text-on-background">Meer opties</SheetTitle>
+            <SheetTitle className="font-headline font-bold text-on-background">More options</SheetTitle>
           </SheetHeader>
           <div className="py-4 space-y-2">
             {overflowItems.map((item) => {
@@ -184,7 +184,7 @@ export function DesktopSidebar() {
       <button
         onClick={toggleCollapse}
         className="absolute -right-3 top-7 h-6 w-6 rounded-full border border-outline-variant/20 bg-surface-container-lowest text-outline hover:text-on-surface-variant flex items-center justify-center shadow-ambient hover:scale-105 active:scale-95 transition-all cursor-pointer z-50"
-        aria-label={isCollapsed ? 'Sidebar uitklappen' : 'Sidebar inklappen'}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {isCollapsed ? (
           <ChevronRight className="h-3.5 w-3.5" />
@@ -248,17 +248,17 @@ export function DesktopSidebar() {
             'flex items-center gap-2 text-outline hover:text-on-surface-variant transition-colors cursor-pointer',
             isCollapsed ? 'p-2 rounded-full hover:bg-surface-container' : 'text-xs font-bold uppercase tracking-wider'
           )}
-          title={theme === 'dark' ? 'Schakel over naar licht thema' : 'Schakel over naar donker thema'}
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         >
           {theme === 'dark' ? (
             <>
               <Sun className="h-4.5 w-4.5 text-primary" />
-              {!isCollapsed && <span className="animate-slide-in">Licht modus</span>}
+              {!isCollapsed && <span className="animate-slide-in">Light mode</span>}
             </>
           ) : (
             <>
               <Moon className="h-4.5 w-4.5" />
-              {!isCollapsed && <span className="animate-slide-in">Donker modus</span>}
+              {!isCollapsed && <span className="animate-slide-in">Dark mode</span>}
             </>
           )}
         </button>
@@ -266,7 +266,7 @@ export function DesktopSidebar() {
         {!isCollapsed && (
           <div className="animate-slide-in">
             <p className="font-label text-[10px] text-outline uppercase tracking-widest">Chattie v1.0</p>
-            <p className="font-label text-[10px] text-outline-variant mt-0.5">AI Klantenservice</p>
+            <p className="font-label text-[10px] text-outline-variant mt-0.5">AI Customer Service</p>
           </div>
         )}
       </div>

@@ -30,11 +30,11 @@ export type EmailThreadWithMessages = EmailThread & {
 
 // Qualification step metadata
 export const QUALIFICATION_STEPS = [
-  { step: 1, label: 'Adres', field: 'collected_address' as const, icon: '📍' },
-  { step: 2, label: 'Wensen', field: 'collected_wishes' as const, icon: '🌿' },
-  { step: 3, label: 'Afmetingen', field: 'collected_dimensions' as const, icon: '📐' },
-  { step: 4, label: "Foto's", field: 'collected_photos' as const, icon: '📷' },
-  { step: 5, label: 'E-mail', field: 'collected_email' as const, icon: '📧' },
+  { step: 1, label: 'Address', field: 'collected_address' as const, icon: '📍' },
+  { step: 2, label: 'Wishes', field: 'collected_wishes' as const, icon: '🌿' },
+  { step: 3, label: 'Dimensions', field: 'collected_dimensions' as const, icon: '📐' },
+  { step: 4, label: "Photos", field: 'collected_photos' as const, icon: '📷' },
+  { step: 5, label: 'Email', field: 'collected_email' as const, icon: '📧' },
 ] as const;
 
 // Badge color helpers
@@ -56,13 +56,13 @@ export function getStatusColor(status: string): string {
 export function getStatusLabel(status: string): string {
   switch (status) {
     case 'active':
-      return 'Actief';
+      return 'Active';
     case 'paused':
-      return 'Gepauzeerd';
+      return 'Paused';
     case 'qualified':
-      return 'Gekwalificeerd';
+      return 'Qualified';
     case 'closed':
-      return 'Gesloten';
+      return 'Closed';
     default:
       return status;
   }

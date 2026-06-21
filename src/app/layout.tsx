@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Chattie — AI Klantenservice Dashboard',
-  description: 'AI-powered WhatsApp en email klantenservice voor hoveniersbedrijf',
+  title: 'Chattie — AI Customer Service Dashboard',
+  description: 'AI-powered WhatsApp and email customer service for landscaping businesses',
 };
 
 export const viewport = {
@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="nl" className={`${manrope.variable} ${inter.variable}`}>
+    <html lang="en" className={`${manrope.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-surface antialiased">
         {children}
         <Toaster

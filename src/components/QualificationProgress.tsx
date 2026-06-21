@@ -62,7 +62,7 @@ export function QualificationProgress({
         })}
       </div>
       <span className="font-label text-[10px] text-on-surface-variant/70 font-semibold uppercase tracking-wider">
-        {currentStep}/{totalSteps} stappen
+        {currentStep}/{totalSteps} steps
       </span>
     </div>
   );
@@ -92,7 +92,7 @@ export function QualificationProgressBar({
         ))}
       </div>
       <span className="font-label text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-        {currentStep}/{totalSteps} stappen gekwalificeerd
+        {currentStep}/{totalSteps} steps qualified
       </span>
     </div>
   );

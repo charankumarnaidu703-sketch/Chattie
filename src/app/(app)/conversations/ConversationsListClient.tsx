@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Search } from 'lucide-react';
 import { StatusBadge, StatusDot } from '@/components/StatusBadge';
 import { QualificationProgress } from '@/components/QualificationProgress';
@@ -21,8 +21,8 @@ interface ConversationsListClientProps {
 function getTimeLabel(dateStr: string) {
   const d = new Date(dateStr);
   if (isToday(d)) return format(d, 'HH:mm');
-  if (isYesterday(d)) return 'Gisteren';
-  return formatDistanceToNow(d, { locale: nl, addSuffix: false });
+  if (isYesterday(d)) return 'Yesterday';
+  return formatDistanceToNow(d, { locale: enUS, addSuffix: false });
 }
 
 function getConversationStatus(c: ConversationWithContact): string {
@@ -41,10 +41,10 @@ function getStatusColor(status: string): 'primary' | 'secondary' | 'tertiary' {
 }
 
 const TABS = [
-  { key: 'alle', label: 'Alle' },
-  { key: 'actief', label: 'Actief' },
-  { key: 'gepauzeerd', label: 'Gepauzeerd' },
-  { key: 'volledig', label: 'Volledig' },
+  { key: 'alle', label: 'All' },
+  { key: 'actief', label: 'Active' },
+  { key: 'gepauzeerd', label: 'Paused' },
+  { key: 'volledig', label: 'Qualified' },
 ];
 
 export function ConversationsListClient({ conversations }: ConversationsListClientProps) {
@@ -94,12 +94,12 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
       {/* Header */}
       <header className="flex justify-between items-center">
         <h1 className="font-headline font-bold text-2xl tracking-tight text-primary">
-          Gesprekken
+          Conversations
         </h1>
         <button
           onClick={() => setShowSearch((s) => !s)}
           className="h-11 w-11 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-95"
-          aria-label="Zoeken openen"
+          aria-label="Open search"
         >
           <Search className="h-5 w-5 text-primary" />
         </button>
@@ -113,7 +113,7 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
         <div className="animate-slide-in">
           <input
             type="text"
-            placeholder="Zoek op naam of telefoonnummer..."
+            placeholder="Search by name or phone number..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full bg-surface-container-highest rounded-2xl px-4 py-3.5 text-sm font-medium text-on-background placeholder:text-on-surface-variant/50 border-none outline-none focus:ring-2 focus:ring-primary/20 min-h-[44px]"
@@ -142,11 +142,11 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
       {/* Conversation Cards */}
       {filtered.length === 0 ? (
         <EmptyState
-          message={searchQuery ? 'Geen resultaten gevonden' : 'Geen gesprekken in deze categorie'}
+          message={searchQuery ? 'No results found' : 'No conversations in this category'}
           subMessage={
             searchQuery
-              ? `Geen gesprekken gevonden voor "${searchQuery}"`
-              : 'Zodra klanten via WhatsApp berichten sturen, verschijnen ze hier.'
+              ? `No conversations found for "${searchQuery}"`
+              : 'Once clients send messages via WhatsApp, they will appear here.'
           }
         />
       ) : (
@@ -165,7 +165,7 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
                     <div className="flex items-center gap-3">
                       <StatusDot status={status} />
                       <span className="font-headline font-bold text-on-background">
-                        {contact?.name || contact?.phone || 'Onbekend'}
+                        {contact?.name || contact?.phone || 'Unknown'}
                       </span>
                     </div>
                     <span className="font-label text-on-surface-variant text-xs">
@@ -203,7 +203,7 @@ export function ConversationsListClient({ conversations }: ConversationsListClie
                 onClick={() => setDisplayCount((prev) => prev + 15)}
                 className="px-6 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label text-xs font-bold uppercase tracking-wider rounded-full active:scale-95 transition-all min-h-[44px] cursor-pointer"
               >
-                Laad meer gesprekken ({filtered.length - displayCount} over)
+                Load more conversations ({filtered.length - displayCount} remaining)
               </button>
             </div>
           )}

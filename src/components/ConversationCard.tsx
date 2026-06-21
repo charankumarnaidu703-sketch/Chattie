@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { nl } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { MessageSquare } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { QualificationProgress } from '@/components/QualificationProgress';
@@ -14,22 +14,22 @@ interface ConversationCardProps {
 
 export function ConversationCard({ conversation }: ConversationCardProps) {
   const contact = conversation.contacts;
-  const displayName = contact?.name || contact?.phone || 'Onbekend';
+  const displayName = contact?.name || contact?.phone || 'Unknown';
   const lastMessage = conversation.messages?.[0];
   const lastMessagePreview = lastMessage?.content
     ? lastMessage.content.length > 60
       ? lastMessage.content.substring(0, 60) + '...'
       : lastMessage.content
-    : 'Geen berichten';
+    : 'No messages';
 
   const timeAgo = lastMessage?.sent_at
     ? formatDistanceToNow(new Date(lastMessage.sent_at), {
         addSuffix: true,
-        locale: nl,
+        locale: enUS,
       })
     : formatDistanceToNow(new Date(conversation.created_at), {
         addSuffix: true,
-        locale: nl,
+        locale: enUS,
       });
 
   const statusDotColor =
